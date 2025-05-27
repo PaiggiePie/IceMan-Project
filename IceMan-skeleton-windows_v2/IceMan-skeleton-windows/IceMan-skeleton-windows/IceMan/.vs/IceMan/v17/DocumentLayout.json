@@ -1,22 +1,22 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\paigg\\OneDrive\\Documents\\School\\CSCI-30\\CSCI-30 Projects\\IceMan-skeleton-windows_v2\\IceMan-skeleton-windows\\IceMan-skeleton-windows\\IceMan\\",
+  "WorkspaceRootPath": "C:\\Users\\paigg\\OneDrive\\Documents\\GitHub\\IceMan-Project\\IceMan-skeleton-windows_v2\\IceMan-skeleton-windows\\IceMan-skeleton-windows\\IceMan\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{623254D2-2E85-4EAD-B9E9-3CC3EB35DDED}|IceMan\\IceMan.vcxproj|C:\\Users\\paigg\\OneDrive\\Documents\\School\\CSCI-30\\CSCI-30 Projects\\IceMan-skeleton-windows_v2\\IceMan-skeleton-windows\\IceMan-skeleton-windows\\IceMan\\IceMan\\StudentWorld.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "AbsoluteMoniker": "D:0:0:{623254D2-2E85-4EAD-B9E9-3CC3EB35DDED}|IceMan\\IceMan.vcxproj|C:\\Users\\paigg\\OneDrive\\Documents\\GitHub\\IceMan-Project\\IceMan-skeleton-windows_v2\\IceMan-skeleton-windows\\IceMan-skeleton-windows\\IceMan\\IceMan\\Actor.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{623254D2-2E85-4EAD-B9E9-3CC3EB35DDED}|IceMan\\IceMan.vcxproj|solutionrelative:IceMan\\Actor.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{623254D2-2E85-4EAD-B9E9-3CC3EB35DDED}|IceMan\\IceMan.vcxproj|C:\\Users\\paigg\\OneDrive\\Documents\\GitHub\\IceMan-Project\\IceMan-skeleton-windows_v2\\IceMan-skeleton-windows\\IceMan-skeleton-windows\\IceMan\\IceMan\\StudentWorld.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{623254D2-2E85-4EAD-B9E9-3CC3EB35DDED}|IceMan\\IceMan.vcxproj|solutionrelative:IceMan\\StudentWorld.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{623254D2-2E85-4EAD-B9E9-3CC3EB35DDED}|IceMan\\IceMan.vcxproj|C:\\Users\\paigg\\OneDrive\\Documents\\School\\CSCI-30\\CSCI-30 Projects\\IceMan-skeleton-windows_v2\\IceMan-skeleton-windows\\IceMan-skeleton-windows\\IceMan\\IceMan\\StudentWorld.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "AbsoluteMoniker": "D:0:0:{623254D2-2E85-4EAD-B9E9-3CC3EB35DDED}|IceMan\\IceMan.vcxproj|C:\\Users\\paigg\\OneDrive\\Documents\\GitHub\\IceMan-Project\\IceMan-skeleton-windows_v2\\IceMan-skeleton-windows\\IceMan-skeleton-windows\\IceMan\\IceMan\\StudentWorld.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{623254D2-2E85-4EAD-B9E9-3CC3EB35DDED}|IceMan\\IceMan.vcxproj|solutionrelative:IceMan\\StudentWorld.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{623254D2-2E85-4EAD-B9E9-3CC3EB35DDED}|IceMan\\IceMan.vcxproj|C:\\Users\\paigg\\OneDrive\\Documents\\School\\CSCI-30\\CSCI-30 Projects\\IceMan-skeleton-windows_v2\\IceMan-skeleton-windows\\IceMan-skeleton-windows\\IceMan\\IceMan\\Actor.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "AbsoluteMoniker": "D:0:0:{623254D2-2E85-4EAD-B9E9-3CC3EB35DDED}|IceMan\\IceMan.vcxproj|C:\\Users\\paigg\\OneDrive\\Documents\\GitHub\\IceMan-Project\\IceMan-skeleton-windows_v2\\IceMan-skeleton-windows\\IceMan-skeleton-windows\\IceMan\\IceMan\\Actor.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{623254D2-2E85-4EAD-B9E9-3CC3EB35DDED}|IceMan\\IceMan.vcxproj|solutionrelative:IceMan\\Actor.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{623254D2-2E85-4EAD-B9E9-3CC3EB35DDED}|IceMan\\IceMan.vcxproj|C:\\Users\\paigg\\OneDrive\\Documents\\School\\CSCI-30\\CSCI-30 Projects\\IceMan-skeleton-windows_v2\\IceMan-skeleton-windows\\IceMan-skeleton-windows\\IceMan\\IceMan\\Actor.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{623254D2-2E85-4EAD-B9E9-3CC3EB35DDED}|IceMan\\IceMan.vcxproj|solutionrelative:IceMan\\Actor.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     }
   ],
   "DocumentGroupContainers": [
@@ -26,41 +26,41 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "StudentWorld.cpp",
-              "DocumentMoniker": "C:\\Users\\paigg\\OneDrive\\Documents\\School\\CSCI-30\\CSCI-30 Projects\\IceMan-skeleton-windows_v2\\IceMan-skeleton-windows\\IceMan-skeleton-windows\\IceMan\\IceMan\\StudentWorld.cpp",
+              "DocumentMoniker": "C:\\Users\\paigg\\OneDrive\\Documents\\GitHub\\IceMan-Project\\IceMan-skeleton-windows_v2\\IceMan-skeleton-windows\\IceMan-skeleton-windows\\IceMan\\IceMan\\StudentWorld.cpp",
               "RelativeDocumentMoniker": "IceMan\\StudentWorld.cpp",
-              "ToolTip": "C:\\Users\\paigg\\OneDrive\\Documents\\School\\CSCI-30\\CSCI-30 Projects\\IceMan-skeleton-windows_v2\\IceMan-skeleton-windows\\IceMan-skeleton-windows\\IceMan\\IceMan\\StudentWorld.cpp",
+              "ToolTip": "C:\\Users\\paigg\\OneDrive\\Documents\\GitHub\\IceMan-Project\\IceMan-skeleton-windows_v2\\IceMan-skeleton-windows\\IceMan-skeleton-windows\\IceMan\\IceMan\\StudentWorld.cpp",
               "RelativeToolTip": "IceMan\\StudentWorld.cpp",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAA8AAAAAAAAAAAAAABQAAAAWAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2025-05-05T16:47:48.515Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "StudentWorld.h",
-              "DocumentMoniker": "C:\\Users\\paigg\\OneDrive\\Documents\\School\\CSCI-30\\CSCI-30 Projects\\IceMan-skeleton-windows_v2\\IceMan-skeleton-windows\\IceMan-skeleton-windows\\IceMan\\IceMan\\StudentWorld.h",
+              "DocumentMoniker": "C:\\Users\\paigg\\OneDrive\\Documents\\GitHub\\IceMan-Project\\IceMan-skeleton-windows_v2\\IceMan-skeleton-windows\\IceMan-skeleton-windows\\IceMan\\IceMan\\StudentWorld.h",
               "RelativeDocumentMoniker": "IceMan\\StudentWorld.h",
-              "ToolTip": "C:\\Users\\paigg\\OneDrive\\Documents\\School\\CSCI-30\\CSCI-30 Projects\\IceMan-skeleton-windows_v2\\IceMan-skeleton-windows\\IceMan-skeleton-windows\\IceMan\\IceMan\\StudentWorld.h",
+              "ToolTip": "C:\\Users\\paigg\\OneDrive\\Documents\\GitHub\\IceMan-Project\\IceMan-skeleton-windows_v2\\IceMan-skeleton-windows\\IceMan-skeleton-windows\\IceMan\\IceMan\\StudentWorld.h",
               "RelativeToolTip": "IceMan\\StudentWorld.h",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAwAAAAAAAAAAAAcwCYAAAA8AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
               "WhenOpened": "2025-05-05T16:47:47.59Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 3,
               "Title": "Actor.cpp",
-              "DocumentMoniker": "C:\\Users\\paigg\\OneDrive\\Documents\\School\\CSCI-30\\CSCI-30 Projects\\IceMan-skeleton-windows_v2\\IceMan-skeleton-windows\\IceMan-skeleton-windows\\IceMan\\IceMan\\Actor.cpp",
+              "DocumentMoniker": "C:\\Users\\paigg\\OneDrive\\Documents\\GitHub\\IceMan-Project\\IceMan-skeleton-windows_v2\\IceMan-skeleton-windows\\IceMan-skeleton-windows\\IceMan\\IceMan\\Actor.cpp",
               "RelativeDocumentMoniker": "IceMan\\Actor.cpp",
-              "ToolTip": "C:\\Users\\paigg\\OneDrive\\Documents\\School\\CSCI-30\\CSCI-30 Projects\\IceMan-skeleton-windows_v2\\IceMan-skeleton-windows\\IceMan-skeleton-windows\\IceMan\\IceMan\\Actor.cpp",
+              "ToolTip": "C:\\Users\\paigg\\OneDrive\\Documents\\GitHub\\IceMan-Project\\IceMan-skeleton-windows_v2\\IceMan-skeleton-windows\\IceMan-skeleton-windows\\IceMan\\IceMan\\Actor.cpp",
               "RelativeToolTip": "IceMan\\Actor.cpp",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
@@ -69,13 +69,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 0,
               "Title": "Actor.h",
-              "DocumentMoniker": "C:\\Users\\paigg\\OneDrive\\Documents\\School\\CSCI-30\\CSCI-30 Projects\\IceMan-skeleton-windows_v2\\IceMan-skeleton-windows\\IceMan-skeleton-windows\\IceMan\\IceMan\\Actor.h",
+              "DocumentMoniker": "C:\\Users\\paigg\\OneDrive\\Documents\\GitHub\\IceMan-Project\\IceMan-skeleton-windows_v2\\IceMan-skeleton-windows\\IceMan-skeleton-windows\\IceMan\\IceMan\\Actor.h",
               "RelativeDocumentMoniker": "IceMan\\Actor.h",
-              "ToolTip": "C:\\Users\\paigg\\OneDrive\\Documents\\School\\CSCI-30\\CSCI-30 Projects\\IceMan-skeleton-windows_v2\\IceMan-skeleton-windows\\IceMan-skeleton-windows\\IceMan\\IceMan\\Actor.h",
+              "ToolTip": "C:\\Users\\paigg\\OneDrive\\Documents\\GitHub\\IceMan-Project\\IceMan-skeleton-windows_v2\\IceMan-skeleton-windows\\IceMan-skeleton-windows\\IceMan\\IceMan\\Actor.h",
               "RelativeToolTip": "IceMan\\Actor.h",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
               "WhenOpened": "2025-05-05T16:47:20.653Z",
               "EditorCaption": ""
