@@ -16,10 +16,7 @@
 class StudentWorld : public GameWorld
 {
 public:
-    StudentWorld(std::string assetDir)
-        : GameWorld(assetDir)
-    {
-    }
+    StudentWorld(std::string assetDir);
 
     virtual int init();
 
@@ -31,12 +28,13 @@ public:
         return GWSTATUS_PLAYER_DIED;
     }*/
 
-    virtual void cleanUp()
-    {
-    }
+    virtual void cleanUp();
 
 private:
-    std::vector<Actor*> actors;
+    
+    std::vector <Actor*> actors {};
+    std::vector <Ice*> iceField;
+    
 };
 
 
