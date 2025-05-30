@@ -8,13 +8,39 @@ GameWorld* createStudentWorld(string assetDir)
 {
     return new StudentWorld(assetDir);
 }
+
+StudentWorld::StudentWorld(std::string assetDir)
+: GameWorld(assetDir){ //contructor
+
+    
+}
+
+//functions to implement
+
 int StudentWorld::init(){
-    int i = getLives();
-    cout << "Lives:" << i << endl;
     
-    Iceman* I = new Iceman;
-    I->setVisible(true);
+    //int i = getLives();
+    //cout << "Lives:" << i << endl;
     
+    Iceman* iceMan = new Iceman(this);
+    actors.push_back(iceMan);
+
+    //ice making code
+    for (int i = 0; i < 65; i++){
+        for (int j = 0; j < 60; j++){
+            if(i > 29 && i < 34 && j > 3){
+                continue;
+            }
+            else{
+                Ice* iceObj = new Ice(this);
+                iceObj->moveTo(i, j);
+                iceField.push_back(iceObj);
+            }
+            
+        }
+    }
+        
+        
     return GWSTATUS_CONTINUE_GAME;
     
 }
@@ -24,6 +50,9 @@ int StudentWorld::move(){
     return GWSTATUS_CONTINUE_GAME;
 }
 
+void StudentWorld::cleanUp(){
+    
+}
 
 /*
 int StudentWorld::move()
@@ -64,3 +93,5 @@ return GWSTATUS_FINISHED_LEVEL;
 return GWSTATUS_CONTINUE_GAME;
 }
 */
+
+
