@@ -2,61 +2,57 @@
 #define ACTOR_H_
 
 #include "GraphObject.h"
+class StudentWorld;
+
+using namespace std;
 
 // Students:  Add code to this file, Actor.cpp, StudentWorld.h, and StudentWorld.cpp
 
 class Actor: public GraphObject{
 public:
-
-    //parametized constructor to allow each derived class to have unique position and size
-    Actor(int ID, int x, int y, Direction dir, double siz, unsigned int dep):
-    GraphObject(ID, x, y, dir, siz, dep){   
-        setVisible(true);
-
-    }
     
+    //parametized constructor to allow each derived class to have unique position and size
+    Actor(int ID, int x, int y, Direction dir, double siz, unsigned int dep);
     
     bool is_Alive();
     
     //virtual functions
     virtual void doSomething() = 0;
-    //virtual ~Actor();
+    virtual ~Actor();
 
 private:
     bool m_isAlive; //alive or dead
-   
-
 };
 
 
 
 class Iceman: public Actor{
 public:
-    Iceman(): Actor(IID_PLAYER, 30, 60, right, 1.0, 0){
-        setVisible(true);
-    }
     
-    
-    
-    
+    //contructor declaration
+    Iceman(StudentWorld* sp);
     virtual void doSomething();
-    
-    ~Iceman(){}
+    ~Iceman();
     
 private:
     int m_hits = 10;
     int m_squirts = 5;
     int m_sonar = 1;
     int m_nuggets = 0;
+    StudentWorld* sp = nullptr;
 };
 
 
 class Ice: public Actor{
 public:
-    Ice(): Actor(IID_ICE, 0, 0, right, 0.25, 3){}
     
-    ~Ice(){}
-
+    //contructor declaration
+    Ice(StudentWorld* sp);
+    virtual void doSomething();
+    ~Ice();
+    
+private:
+    StudentWorld* sp = nullptr;
 };
 
 
