@@ -6,8 +6,23 @@ using namespace std;
 
 GameWorld* createStudentWorld(string assetDir)
 {
+<<<<<<< Updated upstream
 	return new StudentWorld(assetDir);
 
+=======
+    return new StudentWorld(assetDir);
+}
+int StudentWorld::init(){
+    int i = getLives();
+    //cout << "Lives:" << i << endl;
+    
+    Iceman* I = new Iceman;
+    I->setVisible(true);
+    
+    return GWSTATUS_CONTINUE_GAME;
+    
+}
+>>>>>>> Stashed changes
 
 }
 

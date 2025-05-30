@@ -21,6 +21,7 @@ public:
 		return GWSTATUS_CONTINUE_GAME;
 	}
 
+<<<<<<< Updated upstream
 	virtual int move()
 	{
 		// This code is here merely to allow the game to build, run, and terminate after you hit enter a few times.
@@ -63,6 +64,16 @@ public:
 			+ std::string(6 - std::to_string(score).length(), '0') + std::to_string(score);
 		GameWorld::setGameStatText(s); // in GameWorld.cpp
 	}
+=======
+    virtual int move();
+
+        // This code is here merely to allow the game to build, run, and terminate after you hit enter a few times.
+        // Notice that the return value GWSTATUS_PLAYER_DIED will cause our framework to end the current level.
+
+
+    virtual void cleanUp();
+
+>>>>>>> Stashed changes
 
 private:
 	int gameLevel;
