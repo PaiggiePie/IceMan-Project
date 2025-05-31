@@ -17,7 +17,21 @@ class StudentWorld : public GameWorld
 {
 public:
     StudentWorld(std::string assetDir); //contructor1
+    
+    ~StudentWorld() {
+        // destructor to clean up memory
+        for (auto& actor : actors) {
+            delete actor; // delete all actors
+        }
+        actors.clear();
+        for (auto& iceObj : iceField) {
+            delete iceObj; // delete all ice objects
+        }
+        iceField.clear();
+        cout << "StudentWorld dtor" << endl;
 
+    };
+    
     virtual int init();
 
     virtual int move();
@@ -27,7 +41,7 @@ public:
         decLives();
         return GWSTATUS_PLAYER_DIED;
     }*/
-
+    
     virtual void cleanUp();
 
 
