@@ -23,14 +23,12 @@ public:
     
 	
 	// getWorld function to return the StudentWorld pointer
-	virtual StudentWorld* getWorld() {
-		return sp;
-	}
+    virtual StudentWorld* getWorld(StudentWorld*& sp) const;
 
 protected:
     // current level number, used for calculating ticks to wait between moves for protester
     //int currentLevelNumber = sp->getLevel(); 
-    StudentWorld* sp;
+    StudentWorld* sp = nullptr;
 private:
     bool m_isAlive = true; //alive or dead
     
