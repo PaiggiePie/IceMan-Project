@@ -2,102 +2,215 @@
 #define ACTOR_H_
 
 #include "GraphObject.h"
+class StudentWorld;
+
+using namespace std;
+
+// Students:  Add code to this file, Actor.cpp, StudentWorld.h, and StudentWorld.cpp
 
 class Actor : public GraphObject {
-	Actor(int imageID, int startX, int startY,
-		DIRECTION startDirection, float size,
-		unsigned int depth);
-	void setVisible(bool shouldIDisplay); 
-	void getX() const;
-	void moveTo(int x, int y);
-	void doSomething();
+public:
 
-protected: 
-	size_t current_level_number; // starts at 1
-	// int?
+    //parametized constructor to allow each derived class to have unique position and size
+    Actor(int ID, int x, int y, Direction dir, double siz, unsigned int dep);
+
+    bool is_Alive();
+
+    //virtual functions
+    virtual void doSomething() = 0;
+    virtual ~Actor();
+    
+    
+	
+	// getWorld function to return the StudentWorld pointer
+	virtual StudentWorld* getWorld() {
+		return sp;
+	}
+
+protected:
+    // current level number, used for calculating ticks to wait between moves for protester
+    //int currentLevelNumber = sp->getLevel(); 
+    StudentWorld* sp;
+private:
+    bool m_isAlive = true; //alive or dead
+    
 };
+
+
 
 class Iceman : public Actor {
-	// bonked by boulders
-
-	Iceman(int imageID, int startX, int startY,
-		DIRECTION startDirection, float size,
-		unsigned int depth) : Actor(IID_PLAYER, 30, 60, "right", 1.0, 0);
-
-	int getX() const;
-	int getY() const; // uses GraphObject x, y member variables
-	void moveTo(int x, int y);
-	DIRECTION getDirection() const;
-	void setDirection(DIRECTION d);
+public:
+    //contructor declaration
+    Iceman(StudentWorld* sp);
+    virtual void doSomething();
+    ~Iceman();
+    bool is_Alive()
+    {
+        return m_isAlive;
+    }
+    //virtual StudentWorld* getWorld() const {
+    //    StudentWorld* world = sp;
+    //    return world;
+    //};
 
 private:
-	int water_count = 5;
-	int hit_points = 10;
-	int sonar_charge = 1;
-	int gold_nuggets = 0;
-
+    int m_hits = 10;
+    int m_squirts = 5;
+    int m_sonar = 1;
+    int m_nuggets = 0;
+    //StudentWorld* sp = nullptr;
+    bool m_isAlive;
 };
 
+
+class Ice : public Actor {
+public:
+
+    //contructor declaration
+    Ice(StudentWorld* sp);
+    ~Ice();
+	virtual void doSomething() override {
+		// Ice does not perform any actions
+	}
+
+private:
+    //StudentWorld* sp = nullptr;
+};
+
+
+
+//******************************** Protester *******************************
 class Protester : public Actor {
-	// (60, 60)
-	int probabilityOfHardcore = std::min(90, current_level_number * 10 + 30);
-	int T = std::max(25, 200 – current_level_number); // # of tick to wait for new protester
-	int P = std::min(15, 2 + current_level_number * 1.5); // # of Protesters that should be on field
+public:
+    // constructor
+    Protester(StudentWorld* sp) : Actor(IID_PROTESTER, 60, 60, left, 1.0, 0) {
+        sp = sp;
+        setVisible(true);
+    }
+
+    virtual void doSomething() {}
+
+
+private:
+    bool alive = true;
+    //StudentWorld* sp = nullptr;
+    //int ticksToWaitBetweenMoves = max(0, (3 - currentLevelNumber / 4));
 };
 
-class RegularProtesters : public Protester { 
-	// annoyed by squirts of water
-	// bonked by boulders
+class RegularProtester : public Protester {
+public:
+    RegularProtester(StudentWorld* sp);
+    virtual void doSomething() override;
 
-	void moveTo(int x, int y);
-	// moveTo(getX()+1, y); 
-	// move one square to the right
+	bool is_Alive()
+	{
+		return alive;
+	}
+
+	bool is_LeavingField() {
+		return leave_field;
+	}
+
+private:
+	bool alive = true;
+    //StudentWorld* sp = nullptr;
+    int m_hits = 5;
+	bool leave_field = false; // if true, protester will leave field after being hit
 };
 
-class HardcoreProtesters : public Protester {
-	// annoyed by squirts of water
-	// bonked by boulders
-	
+class HardcoreProtester : public Protester {
+public:
+    HardcoreProtester(StudentWorld* sp);
+    virtual void doSomething() override;
+
+	bool is_Alive() {
+		return alive;
+	}
+
+    bool is_LeavingField() {
+        return leave_field;
+    }
+
+private:
+    bool alive = true;
+    //StudentWorld* sp = nullptr;
+    bool leave_field = false;
+};
+
+
+//******************************** Objects *******************************
+
+class BarrelsOfOil : public Actor {
+public:
+	BarrelsOfOil(StudentWorld* sp);
+    virtual void doSomething() override;
+
+    bool is_Alive() {
+        return alive;
+    }
+
+    ~BarrelsOfOil();
+
+private:
+    //StudentWorld* sp = nullptr;
+    bool alive = true;
+};
+
+class Boulders : public Actor {
+public:
+	Boulders(StudentWorld* sp);
+    virtual void doSomething() override;
+    bool is_Alive() {
+        return alive;
+    }
+
+    //if boulder falls below ice, it is dead, alive = false
+
+private:
+    bool alive = true;
+    //StudentWorld* sp = nullptr;
 
 };
 
-class StaticObject : public Actor {
-	
-};
+class GoldNuggets : public Actor {
+public:
+	GoldNuggets(StudentWorld* sp);
+    virtual void doSomething() override;
+    bool is_Alive() {
+        return alive;
+    }
 
-class SquirtsOfWater : public DynamicObject {
-
-};
-
-class BarrelsOfOil : public StaticObject {
-
-};
-
-class Boulders : public DynamicObject {
+private:
+    bool alive = true;
+    //StudentWorld* sp = nullptr;
 
 };
 
-class GoldNuggets : public StaticObject {
+class WaterRefills : public Actor {
+public:
+	WaterRefills(StudentWorld* sp);
+    virtual void doSomething() override;
+    bool is_Alive() {
+        return alive;
+    }
 
+private:
+    bool alive = true;
+    //StudentWorld* sp = nullptr;
 };
 
-class SonarKits : public StaticObject {
-	// (0, 60)
-	// chance of spawn:  int G = current_level_number * 30 + 290
+class Sonar : public Actor {
+public:
+    Sonar(StudentWorld* sp);
+    virtual void doSomething() override;
+    bool is_Alive() {
+        return alive;
+    }
 
+private:
+    bool alive = true;
+    //StudentWorld* sp = nullptr;
 };
 
-class DynamicObject : public Actor {
-
-};
-
-class Water : public DynamicObject { // water refills (water pools)
-	// location: random ice-less spot in 4x4 grid
-	// 4/5 chance
-	// chance of spawn:  int G = current_level_number * 30 + 290
-};
-
-class Ice : public StaticObject {
-
-};
 #endif // ACTOR_H_
+
