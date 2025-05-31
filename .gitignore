@@ -1,3 +1,10 @@
 .vscode/c_cpp_properties.json
 .vscode/settings.json
 .vscode/launch.json
+*
+.gitignore
+!IceMan
+!IceMan/Actor.h
+!IceMan/Actor.cpp
+!IceMan/StudentWorld.h
+!IceMan/StudentWorld.cpp
