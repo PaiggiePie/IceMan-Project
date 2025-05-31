@@ -4,11 +4,12 @@
 #include <vector>
 using namespace std;
 
+StudentWorld* sw;
 int ticks = 0; // global variable to keep track of ticks
 GameWorld* createStudentWorld(string assetDir)
 {
-	
-    return new StudentWorld(assetDir);
+	sw = new StudentWorld(assetDir); // create a new StudentWorld object
+    return sw;
 }
 
 StudentWorld::StudentWorld(std::string assetDir)
@@ -18,6 +19,11 @@ StudentWorld::StudentWorld(std::string assetDir)
 }
 
 //functions to implement
+
+StudentWorld* Actor::getWorld(StudentWorld*& sp) const {
+	// This function returns the StudentWorld pointer associated with this Actor
+	return sp = sw;
+}
 
 int StudentWorld::init() {
 	StudentWorld* sp = nullptr;
@@ -36,7 +42,7 @@ int StudentWorld::init() {
                 iceObj->moveTo(i, j);
                 iceField.push_back(iceObj);
             }
-
+			
         }
     }
 
@@ -70,6 +76,7 @@ int StudentWorld::move() {
 			delete actor; // delete dead actors
 		}
 	}
+
 	
  //   int T = std::max(25, (200 - ((int) getLevel()))); // # of tick to wait for new protester
 	//int P = std::min(15.0, (2 + ((int) getLevel()) * 1.5)); // # of Protesters that should be on field
@@ -155,3 +162,5 @@ return GWSTATUS_FINISHED_LEVEL;
 return GWSTATUS_CONTINUE_GAME;
 }
 */
+
+
