@@ -33,7 +33,7 @@ Actor::~Actor() {
 
 Iceman::Iceman(StudentWorld* sp) : Actor(IID_PLAYER, 30, 60, right, 1.0, 0) { //contructor
     cout << "Iceman ctor" << endl;
-
+	getGraphObjects(0).insert(this);
     setVisible(true);
 }
 
@@ -41,10 +41,13 @@ Iceman::Iceman(StudentWorld* sp) : Actor(IID_PLAYER, 30, 60, right, 1.0, 0) { //
 
 void Iceman::doSomething() {
 	cout << "iceman : doSomething()" << endl;
-
 	Direction d = getDirection();
     int key;
-	if (getWorld()->getKey(key) == true) {
+	if (getWorld(sp) == nullptr) {
+		cerr << "Error: StudentWorld pointer is null!" << endl;
+		return; // handle the error as needed
+	}
+	if (getWorld(sp)->getKey(key) == true) {
 		switch (key) {
 		case KEY_PRESS_LEFT:
 			if (d != left) {
@@ -104,15 +107,19 @@ void Iceman::doSomething() {
 
 Iceman::~Iceman() {
 	setVisible(false);
-	Ice::getGraphObjects(0).erase(this);
+	Iceman::getGraphObjects(0).erase(this);
 }
 
 
 //******************************** Ice Methods *******************************
 
 //constructor
-Ice::Ice(StudentWorld* sp) : Actor(IID_ICE, getX(), getY(), right, 0.25, 3) {
-    setVisible(false);
+Ice::Ice(StudentWorld* sp) : Actor(IID_ICE, 0, 0, right, 0.25, 3) {
+    //setVisible(true);
+	cout << "Ice ctor" << endl;
+	setVisible(true);
+	// add to the set of graph objects
+	getGraphObjects(3).insert(this);
 }
 
 Ice::~Ice() {
