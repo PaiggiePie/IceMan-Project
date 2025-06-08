@@ -1,7 +1,7 @@
 #ifndef ACTOR_H_
 #define ACTOR_H_
 #include <cstdlib>
-#include <ctime>
+#include <cmath>
 #include <random>
 #include "GraphObject.h"
 class StudentWorld;
@@ -24,7 +24,7 @@ public:
     // getWorld function to return the StudentWorld pointer
     virtual void setWorld(StudentWorld*& sp) const;
     // Get this actor's world
-    StudentWorld* getWorld() const { return sp; };
+    StudentWorld* getWorld() { setWorld(sp);  return sp; };
 
     // Mark this actor as dead.
     void setDead();
@@ -201,7 +201,6 @@ public:
 class ActivatingObject : public Actor
 {
 public:
-
     ActivatingObject(StudentWorld* sp, int x, int y, int ID,
         int soundToPlay, bool activateOnPlayer,
         bool activateOnProtester, bool initallyActive);
@@ -210,13 +209,21 @@ public:
     // Set number of ticks until this object dies
     bool canActorsPassThroughMe() const;
     void setTicksToLive();
+	//void playSound() const {
+	//	getWorld()->playSound(m_soundToPlay); // play sound when this object is activated
+	//}
+	virtual void doSomething() = 0;
+	// Getters for member variables
+	bool activateOnPlayer() const { return m_activateOnPlayer; }
+	bool activateOnProtester() const { return m_activateOnProtester; }
+	bool isInitiallyActive() const { return m_initiallyActive; }    
 
 private:
 	//int m_ticksToLive = 0; // number of ticks until this object dies
-	//int m_soundToPlay; // sound to play when this object is activated
-	//bool m_activateOnPlayer; // true if this object activates on player, false otherwise
-	//bool m_activateOnProtester; // true if this object activates on protester, false otherwise
-	//bool m_initiallyActive; // true if this object is initially active, false otherwise
+	int m_soundToPlay = SOUND_NONE; // sound to play when this object is activated
+	bool m_activateOnPlayer; // true if this object activates on player, false otherwise
+	bool m_activateOnProtester; // true if this object activates on protester, false otherwise
+    bool m_initiallyActive; // true if this object is initially active, false otherwise
 };
 
 class BarrelsOfOil : public ActivatingObject {
@@ -230,9 +237,11 @@ public:
 class GoldNugget : public ActivatingObject { // ghost block
 public:
     GoldNugget(StudentWorld* sp, bool temporary);
+    ~GoldNugget();
     virtual void doSomething();
 
 private:
+    int lifetime = -1; // -1 = not set
     bool pickup = true; // true for iceman; false for protester
 	bool temporary = false; // true if temporary, false if permanent
 
@@ -244,6 +253,10 @@ class SonarKit : public ActivatingObject
 public:
     SonarKit(StudentWorld* sp);
     virtual void doSomething();
+	void setTicksToLive();
+
+private:
+	int lifetime = -1; // -1 = not set
 };
 
 class WaterPool : public ActivatingObject
@@ -251,6 +264,10 @@ class WaterPool : public ActivatingObject
 public:
     WaterPool(StudentWorld* sp);
     virtual void doSomething();
+    void setTicksToLive();
+
+private:
+	int lifetime = -1; // -1 = not set
 };
 
 

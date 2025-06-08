@@ -1,7 +1,7 @@
 #include "Actor.h"
 #include "StudentWorld.h"
+#include <cmath>
 #include <random>
-#include <cstdlib>
 
 
 //******************************** Actor Methods *******************************
@@ -67,7 +67,7 @@ bool Actor::moveToIfPossible(int x, int y) {
 
 //******************************** Agent Methods *******************************
 Agent::Agent(StudentWorld* sp, int ID, int x, int y, Direction dir,
-    unsigned int hitPoints) : Actor(sp, IID_PLAYER, 30, 60, right, 1.0, 0, true) {
+    unsigned int hitPoints) : Actor(sp, ID, x, y, right, 1.0, 0, true) {
     //cout << "Agent ctor" << endl;
 
 }
@@ -110,7 +110,7 @@ void Iceman::doSomething() {
     }
     Direction d = this->getDirection();
     int key;
-    
+
     if (getWorld()->getKey(key) == true) {
         switch (key) {
         case KEY_PRESS_LEFT:
@@ -145,37 +145,75 @@ void Iceman::doSomething() {
                 moveTo(getX(), getY() - 1);
             }
             break;
-        case KEY_PRESS_TAB:
-            addGold();
+        case KEY_PRESS_TAB: //place gold nugget at current position
+            if (getGold() > 0) {
+                m_gold--;
+                GoldNugget* nugget = new GoldNugget(sp, true);
+                sp->addObj(nugget); // add gold nugget to the world
+            }
             break;
-        case KEY_PRESS_SPACE:
+        case KEY_PRESS_SPACE: //squirt water
             if (getWater() > 0) {
-                //Squirt::doSomething();
-            }
-            // else do nothing
-            break;
+                if (m_squirts > 0) {
+                    m_squirts--;
+                    if (d == left && moveToIfPossible(getX() - 4, getY())) {
+                        if (!sp->NearBoulder(getX() - 4, getY(), 3)) { // check if there is a boulder in the way
+                            Squirt* s = new Squirt(sp, getX() - 4, getY(), left); // create squirt object
+                            sp->addActor(s);
+                        }
+                        sp->playSound(SOUND_PLAYER_SQUIRT); // play squirt sound
+                    }
+                    else if (d == right && moveToIfPossible(getX() + 4, getY())) {
+                        if (!sp->NearBoulder(getX() - 4, getY(), 3)) {
+                            Squirt* s = new Squirt(sp, getX() - 4, getY(), right);
+                            sp->addActor(s);
+                        }
+                        sp->playSound(SOUND_PLAYER_SQUIRT);
+                    }
+                    else if (d == up && moveToIfPossible(getX(), getY() - 4)) {
+                        if (!sp->NearBoulder(getX(), getY() - 4, 3)) {
+                            Squirt* s = new Squirt(sp, getX(), getY() - 4, up);
+                            sp->addActor(s);
+                        }
+                        sp->playSound(SOUND_PLAYER_SQUIRT);
+                    }
+                    else if (d == down && moveToIfPossible(getX(), getY() + 4)) {
+                        if (!sp->NearBoulder(getX(), getY() + 4, 3)) {
+                            Squirt* s = new Squirt(sp, getX(), getY() + 4, down);
+                            sp->addActor(s);
+                        }
+                        sp->playSound(SOUND_PLAYER_SQUIRT);
+                    }
+                }
+                // else do nothing
+                break;
         case KEY_PRESS_ESCAPE:
-            setDead();
-            if (isAlive()) {
-                //restart level
-                //else end game
-            }
+            sp->playSound(SOUND_PLAYER_GIVE_UP); // play give up sound
+            setDead(); // set iceman to dead
             break;
         case 'Z':
+            if (getSonar() > 0) { // if iceman has sonar
+                m_sonar--; // decrement sonar
+                getWorld()->revealAllNearbyObjects(getX(), getY(), 60); // reveal all nearby objects
+            }
             //use sonar if available
 
             break;
         case 'z':
             //use sonar if available
-
+            if (getSonar() > 0) { // if iceman has sonar
+                m_sonar--; // decrement sonar
+                getWorld()->revealAllNearbyObjects(getX(), getY(), 60); // reveal all nearby objects
+            }
             break;
+            }
+            sp->clearIce(getX(), getY()); // clear ice at current position
         }
-
     }
 }
 
 bool Iceman::annoy(unsigned int amount) {
-    if (getHitPoints() >= 1) {
+    if (getHitPoints() > 1) {
         Agent::annoy(amount);
         return true;
     }
@@ -228,7 +266,7 @@ Iceman::~Iceman() {
 
 //******************************** Protester Methods *******************************
 Protester::Protester(StudentWorld* sp, int x, int y, int ID,
-    unsigned int hitPoints, unsigned int score) : Agent(sp, IID_PROTESTER, x, y, left, 5) {
+    unsigned int hitPoints, unsigned int score) : Agent(sp, ID, x, y, left, 5) {
     setVisible(true);
     cout << "protester ctor" << endl;
 
@@ -355,21 +393,31 @@ Squirt::Squirt(StudentWorld* sp, int x, int y, Direction dir) : Actor(sp, IID_WA
 }
 
 void Squirt::doSomething() {
-	if (getWorld()->canActorMoveTo(this, getX(), getY() + 1) && getDirection() == up) {
-		moveTo(getX(), getY() + 1);
+	if (moveToIfPossible(getX(), getY() + 4) && getDirection() == up) {
+        if (!sp->NearBoulder(getX(), getY() + 4, 3))
+            moveTo(getX(), getY() + 4);
+        sp->playSound(SOUND_PLAYER_SQUIRT);
 	}
-	else if (getWorld()->canActorMoveTo(this, getX(), getY() - 1) && getDirection() == down) {
-		moveTo(getX(), getY() - 1);
+	else if (moveToIfPossible(getX(), getY() - 4) && getDirection() == down) {
+        if (!sp->NearBoulder(getX(), getY() - 4, 3))
+            moveTo(getX(), getY() - 4);
+        sp->playSound(SOUND_PLAYER_SQUIRT);
 	}
-	else if (getWorld()->canActorMoveTo(this, getX() - 1, getY()) && getDirection() == left) {
-		moveTo(getX() - 1, getY());
+	else if (moveToIfPossible(getX() - 4, getY()) && getDirection() == left) {
+        if (!sp->NearBoulder(getX() -4, getY(), 3))
+            moveTo(getX() - 4, getY());
+        sp->playSound(SOUND_PLAYER_SQUIRT);
 	}
-	else if (getWorld()->canActorMoveTo(this, getX() + 1, getY()) && getDirection() == right) {
-		moveTo(getX() + 1, getY());
+	else if (moveToIfPossible(getX() + 4, getY()) && getDirection() == right) {
+		if (!sp->NearBoulder(getX() + 4, getY(), 3))
+            moveTo(getX() + 4, getY());
+        sp->playSound(SOUND_PLAYER_SQUIRT); 
 	}
 	else {
 		setDead();
+        return;
 	}
+
 }
 
 
@@ -377,8 +425,11 @@ void Squirt::doSomething() {
 //******************************** ActivatingObj Methods *******************************
 ActivatingObject::ActivatingObject(StudentWorld* sp, int x, int y, int ID,
     int soundToPlay, bool activateOnPlayer, bool activateOnProtester, bool initallyActive) :
-    Actor(sp, IID_PLAYER, 0, 0, right, 1.0, 2, true)
+	Actor(sp, ID, x, y, right, 1.0, 2, true), m_soundToPlay(soundToPlay),
+	m_activateOnPlayer(activateOnPlayer), m_activateOnProtester(activateOnProtester),
+	m_initiallyActive(initallyActive)  // initialize the member variables
 {
+    setVisible(false);
     //cout << "ActivatingObject ctor" << endl;
 
 }
@@ -397,8 +448,9 @@ void ActivatingObject::setTicksToLive() {
 };
 
 //******************************** Oil Methods *******************************
-BarrelsOfOil::BarrelsOfOil(StudentWorld* sp) : ActivatingObject(sp, (std::rand() % 64), (std::rand() % 59), IID_BARREL, SOUND_FOUND_OIL, true, false, false) {
+BarrelsOfOil::BarrelsOfOil(StudentWorld* sp) : ActivatingObject(sp, (std::rand() % 59), (std::rand() % 59), IID_BARREL, SOUND_FOUND_OIL, true, false, false) {
     getGraphObjects(2).insert(this);
+    //moveTo((std::rand() % 59), (std::rand() % 59)); // random position in the world
     cout << "Barrels of Oil ctor" << endl;
 }
 
@@ -410,7 +462,7 @@ void BarrelsOfOil::doSomething() {
         }
         if (getWorld()->findNearbyIceMan(this, 3)) {
             this->setDead(); // if iceman is in radius 3, set dead
-            getWorld()->playSound(SOUND_FOUND_OIL); // play sound
+            sp->playSound(SOUND_FOUND_OIL); // play sound
             getWorld()->increaseScore(1000); // increase score by 10
             return;
         }
@@ -431,52 +483,95 @@ BarrelsOfOil::~BarrelsOfOil() {
 
 
 //******************************** Gold Nuggets Methods *******************************
-GoldNugget::GoldNugget(StudentWorld* sp, bool temporary) : ActivatingObject(sp, (rand() % 64), (rand() % 59), IID_GOLD, SOUND_GOT_GOODIE, true, true, false) {
+GoldNugget::GoldNugget(StudentWorld* sp, bool temporary) 
+    : ActivatingObject(sp, (std::rand() % 59), (std::rand() % 59), IID_GOLD, SOUND_GOT_GOODIE, true, true, false)
+	, temporary(temporary), pickup(true)  // initialize temporary, pickup, and lifetime
+{
     getGraphObjects(2).insert(this);
+    //moveTo((std::rand() % 59), (std::rand() % 59)); // random position in the world
     cout << "gold ctor" << endl;
+}
+
+GoldNugget::~GoldNugget() {
+    setVisible(false);
+    getGraphObjects(2).erase(this);
+    cout << "gold dtor" << endl;
 }
 
 void GoldNugget::doSomething() {
     if (isAlive() == false) {
         return; // if not alive, do nothing
     }
-    
-    if (isVisible() == false && (getWorld()->findNearbyPickerUpper(this, 4))->getID() == IID_PLAYER) { // if not visible and iceman is in radius 4
+
+    if (temporary == true) {
+        if (lifetime == -1) {
+            lifetime = getWorld()->getTicks() + 800; // set lifetime to 800 ticks
+        }
+        // if temporary, set dead after lifetime of ticks
+        if (getWorld()->getTicks() == lifetime) {
+            setDead();
+            lifetime = -1; // reset lifetime
+        }
+    }
+
+    if (isVisible() == false && getWorld()->findNearbyIceMan(this, 4)) { // if not visible and iceman is in radius 4
         setVisible(true); // make visible
         return;
     }
+
     Agent* a = getWorld()->findNearbyPickerUpper(this, 3); // find nearby protester or iceman
-    if (a->getID() == IID_PLAYER && pickup == true) {
-        this->setDead(); // if iceman is in radius 3, set dead
-        getWorld()->playSound(SOUND_GOT_GOODIE); // play sound
-        a->addGold(); // add gold to iceman inventory
-        getWorld()->increaseScore(10); // increase score by 10
-		pickup = false; // set pickup to false
-        return;
+    if (a != nullptr) {
+        if (a->getID() == IID_PLAYER && pickup == true) {
+            setDead(); // if iceman is in radius 3, set dead
+            sp->playSound(SOUND_GOT_GOODIE); // play sound
+            a->addGold(); // add gold to iceman inventory
+            getWorld()->increaseScore(10); // increase score by 10
+            pickup = false; // set pickup to false
+            return;
+        }
+
+        else if ((a->getID() == IID_PROTESTER || a->getID() == IID_HARD_CORE_PROTESTER) && pickup == false) {
+            a->addGold(); // add gold to protester inventory
+            this->setDead(); // if protester is in radius 3, set dead
+            sp->playSound(SOUND_GOT_GOODIE); // play sound
+            getWorld()->increaseScore(25); // increase score by 25
+            return;
+        }
     }
-	
-    else if ((a->getID() == IID_PROTESTER || a->getID() == IID_HARD_CORE_PROTESTER) && pickup == false) {
-		a->addGold(); // add gold to protester inventory
-        this->setDead(); // if protester is in radius 3, set dead
-		getWorld()->playSound(SOUND_PROTESTER_FOUND_GOLD); // play sound
-		getWorld()->increaseScore(25); // increase score by 25
-		return;
-	}
-    if (temporary == true) {
-		// if temporary, set dead after 100 ticks
-		if (getWorld()->getTicks() % 100 == 0) {
-			setDead();
-		}
-	}
+
 }
 
 //******************************** Water Pool Methods *******************************
-WaterPool::WaterPool(StudentWorld* sp) : ActivatingObject(sp, (rand() % 64), (rand() % 59), IID_WATER_POOL, SOUND_GOT_GOODIE, true, false, false) {
+WaterPool::WaterPool(StudentWorld* sp) 
+    : ActivatingObject(sp, (std::rand() % 59), (std::rand() % 59), IID_WATER_POOL, SOUND_GOT_GOODIE, true, false, true) // initially active false -> true
+{
     getGraphObjects(2).insert(this);
+    setVisible(true);
+    moveTo((std::rand() % 59), (std::rand() % 59)); // random position in the world
+
 }
 
 void WaterPool::doSomething() {
+    if (isAlive()) {
+        if (lifetime == -1) {
+            setTicksToLive(); // set lifetime if not set
+        }
+        if (getWorld()->getTicks() == lifetime) {
+            setDead(); // set dead after lifetime
+            lifetime = -1; // reset lifetime
+        }
+        if (getWorld()->findNearbyIceMan(this, 3)) {
+            sp->playSound(SOUND_GOT_GOODIE); // play sound
+            getWorld()->getIceman()->addWater(); // add water to iceman inventory
+            getWorld()->increaseScore(100); // increase score by 50
+            setDead(); // set dead
+        }
+    }
+}
 
+void WaterPool::setTicksToLive() {
+	int T = std::max(100, (int) (300 - 19 * sp->getLevel())); // set lifetime to T ticks
+	lifetime = getWorld()->getTicks() + T; // set lifetime to T ticks
 }
 
 //******************************** SonarKit Methods *******************************
@@ -485,5 +580,28 @@ SonarKit::SonarKit(StudentWorld* sp) : ActivatingObject(sp, 0, 60, IID_SONAR, SO
 }
 
 void SonarKit::doSomething() {
+    if (isAlive()) {
+        if (lifetime == -1) {
+            setTicksToLive();
+        }
+        if (getWorld()->getTicks() == lifetime) {
+            setDead();
+            lifetime = -1; // reset lifetime
+        }
+        if (sp->findNearbyIceMan(this, 3)) {
+            sp->playSound(SOUND_GOT_GOODIE);
+            sp->getIceman()->addSonar(); // add sonar to iceman inventory
+            sp->increaseScore(75); // increase score by 75
+            setDead();
+        }
+    }
+	else {
+		return; // if not alive, do nothing
+	}
+}
 
+void SonarKit::setTicksToLive() {
+	int currentLevelNumber = getWorld()->getLevel();  
+    int T = max(100, 300 - 10 * currentLevelNumber);
+	lifetime = getWorld()->getTicks() + T; // set lifetime to T ticks
 }

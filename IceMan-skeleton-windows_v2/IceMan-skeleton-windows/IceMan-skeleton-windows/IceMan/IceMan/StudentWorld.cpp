@@ -29,6 +29,7 @@ void Actor::setWorld(StudentWorld*& sp) const {
 int StudentWorld::init() {
 	// make iceman
 	this->iceman = new Iceman(sw);
+	iceman->setWorld(sw);
 	if (getIceman() == nullptr)
 		cout << "null" << endl;
 	agents.push_back(iceman); // add iceman to agents vector
@@ -43,54 +44,61 @@ int StudentWorld::init() {
 				continue;
 			}
 			else {
-				Ice* iceObj = new Ice(this);
+				Ice* iceObj = new Ice(sw);
 				iceObj->moveTo(i, j);
 				iceField.push_back(iceObj);
 			}
 
 		}
 	}
-
+	GoldNugget* nugget = new GoldNugget(sw, false);
+	aobj.push_back(nugget);
 	// make static objects
-	BarrelsOfOil* barrel = new BarrelsOfOil(this);
+	/*BarrelsOfOil* barrel = new BarrelsOfOil(this);
 	aobj.push_back(barrel);
-	/*GoldNuggets* nugget = new GoldNuggets(this);
-	Boulders* boulder = new Boulders(this);
 	
-	actors.push_back(nuggets);
-	actors.push_back(boulders);*/
+	
+	Boulder* boulder = new Boulder(this);
+	iceField.push_back(boulder);*/
 
 	return GWSTATUS_CONTINUE_GAME;
 }
 
 
 int StudentWorld::move() {
-	int random = (rand() % 64);
-	cout << random << endl;
-	int X = aobj[0]->getX();
-	int Y = aobj[0]->getY();
-	cout << X << ", " << Y << endl;
-	int health = getCurrentHealth();
-	cout << health << endl;
-	int sbs = std::abs((aobj[0]->getY() - getIceman()->getY()));
-	cout << sbs << endl;
+	//testing
+	if (aobj[0]) {
+		int X = aobj[0]->getX();
+		int Y = aobj[0]->getY();
+		cout << X << ", " << Y << endl;
+	}
+	cout << "health: " << getCurrentHealth() << endl;
+	cout << "Level: " << getLevel() << endl;
+
+
+
+
 	setDisplayText();
 	ticks++; // increment ticks for each move
+	if (ticks == 1000)
+		ticks = 1;
 	bool canAddP = false;
 	int G = currentLevelNumber * 30 + 290; // 1 in G chance of water kit or sonar kit added
 	int probabilityOfHardcore = min(90, currentLevelNumber * 10 + 30);
 	currentLevelNumber = getLevel(); // get the current level number
 	int ticksToWaitBetweenMoves = max(0, (3 - currentLevelNumber / 4));
-	if (ticks % ticksToWaitBetweenMoves == 0) {
+	if ((ticks - ticksToWaitBetweenMoves) %2 == 0) {
 		canAddP = true;
 	}
 	if (canAddP == true) {
 		//use probability of hardcore to determine if hardcore protester should be added
 		// use probability of protester spawning
+		// canAddP = false; // reset 
 	}
 	//if(iceman->isAlive())
 	//	iceman->doSomething(); // ask iceman to do something
-	//// Give each Actor a chance to do something
+	
+	// Give each Actor a chance to do something
 	for (auto& agent : agents) {
 		if (agent->isAlive()) {
 			agent->doSomething();
@@ -100,14 +108,18 @@ int StudentWorld::move() {
 		}
 	}
 	for (auto& object : aobj) {
-		if (object->isAlive()) {
+		if (object->isAlive() && object) {
 			object->doSomething();
+			if (object->isAlive() == false)
+				delete object;
 		}
 		else {
 			delete object; // delete dead actors
 		}
+		
 	}
-
+	for (auto& ice : iceField)
+		ice->doSomething(); 
 
 	//   int T = std::max(25, (200 - ((int) getLevel()))); // # of tick to wait for new protester
 	   //int P = std::min(15.0, (2 + ((int) getLevel()) * 1.5)); // # of Protesters that should be on field
@@ -115,19 +127,23 @@ int StudentWorld::move() {
 
 	   //if (probabilityOfHardcore)
 
+	if (iceman->isAlive() == false) {
+		playSound(SOUND_PLAYER_GIVE_UP);
+		decLives();
+		return GWSTATUS_PLAYER_DIED;
+	}
 
 	if (isGameOver() == true) {
 		playSound(SOUND_PLAYER_GIVE_UP);
 		return GWSTATUS_PLAYER_DIED; // if player died
 	}
 
-	if (getBarrelsRemaining() == 0) {
+	/*if (getBarrelsRemaining() == 0) {
 		playSound(SOUND_FINISHED_LEVEL);
 		currentLevelNumber++;
 		return GWSTATUS_FINISHED_LEVEL;
-	}
-	if (ticks == 1000)
-		ticks = 1;
+	}*/
+
 	return GWSTATUS_CONTINUE_GAME;
 }
 
@@ -139,11 +155,6 @@ void StudentWorld::cleanUp() {
 	for (auto& agent : agents) {
 		delete agent; // delete all protesters
 	}
-	for (auto& squirt : squirts) {
-		delete squirt; // delete all squirts
-	}
-	squirts.clear(); 
-	
 	agents.clear();
 	for (auto& object : aobj) {
 		delete object; // delete all actors
@@ -156,12 +167,32 @@ void StudentWorld::cleanUp() {
 
 }
 
-void StudentWorld::addActor(Actor* a) {
+void StudentWorld::addObj(ActivatingObject* a) {
+	aobj.push_back(a);
+	a->doSomething();
+}
 
+void StudentWorld::addActor(Actor* a) {
+	iceField.push_back(a);
+	a->doSomething();
 }
 
 void StudentWorld::clearIce(int x, int y) {
-
+	for (auto& iceObj : iceField) {
+		if ((iceObj->getX() == x ||
+			iceObj->getX() == x + 1 ||
+			iceObj->getX() == x + 2 ||
+			iceObj->getX() == x + 3) &&
+			(iceObj->getY() == y ||
+				iceObj->getY() == y + 1 ||
+				iceObj->getY() == y + 2 ||
+				iceObj->getY() == y + 3)) {
+			iceObj->setVisible(false);
+			if (ticks % 10 == 0)
+				playSound(SOUND_DIG);
+			iceObj->setDead();
+		}
+	}
 }
 
 bool StudentWorld::canActorMoveTo(Actor* a, int x, int y) const {
@@ -173,11 +204,11 @@ bool StudentWorld::canActorMoveTo(Actor* a, int x, int y) const {
 			return false; // ice blocks and boulders
 		}
 	}
-	for (auto& actor : aobj) { // for barrels, gold, sonar, waterpools
-		if (actor->getX() == x && actor->getY() == y) {
-			return false; // another actor is in the way
-		}
-	}
+	//for (auto& actor : aobj) { // for barrels, gold, sonar, waterpools
+	//	if (actor->getX() == x && actor->getY() == y) {
+	//		return false; // another actor is in the way
+	//	}
+	//}
 	return true;
 }
 
@@ -193,6 +224,7 @@ int StudentWorld::annoyAllNearbyActors(Actor* annoyer, int points, int radius) {
 			return 2; // return 2 for protester
 		}
 	}
+	return 0;
 }
 
 void StudentWorld::revealAllNearbyObjects(int x, int y, int radius) {
@@ -315,6 +347,17 @@ bool StudentWorld::isNearIceMan(Actor* a, int radius) const {
 		return true;
 	return false;
 }
+
+bool StudentWorld::NearBoulder(int x, int y, int radius) const {
+	for (int i = 0; i < iceField.size(); i++) {
+		if (iceField[i]->getID() == IID_BOULDER) { // if there is a boulder in the iceField
+			if (radius > abs((x - iceField[i]->getX())) && radius > abs((y - iceField[i]->getY())))
+				return true; // if boulder is in radius, return true
+		}
+	}
+	return false;
+}
+
 
 GraphObject::Direction StudentWorld::determineFirstMoveToExit(int x, int y) {
 	return GraphObject::Direction::none; // placeholder, implement logic to determine first move to exit

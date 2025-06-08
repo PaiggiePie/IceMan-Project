@@ -18,6 +18,10 @@ public:
 
     ~StudentWorld() {
         // destructor to clean up memory
+        for (auto& agent : agents) {
+            delete agent; // delete all actors
+        }
+        agents.clear();
         for (auto& object : aobj) {
             delete object; // delete all actors
         }
@@ -36,6 +40,7 @@ public:
 
     virtual void cleanUp();
 
+    void addObj(ActivatingObject* a);
     void addActor(Actor* a);
 	Iceman* getIceman() const { return iceman; } // getter for iceman
     void clearIce(int x, int y);
@@ -50,12 +55,9 @@ public:
     bool facingTowardIceMan(Actor* a) const;
     GraphObject::Direction lineOfSightToIceMan(Actor* a) const;
     bool isNearIceMan(Actor* a, int radius) const;
-
+    bool NearBoulder(int x, int y, int radius) const;
     GraphObject::Direction determineFirstMoveToExit(int x, int y);
     GraphObject::Direction determineFirstMoveToIceMan(int x, int y);
-
-
-
 
     //getter functions
     virtual const int getCurrentHealth() { return iceman->getHitPoints(); };
@@ -69,7 +71,7 @@ public:
                 barrels++;
             }
         }
-        cout << barrels  << endl;
+        cout << "# barrels: " << barrels << endl;
         return barrels; // if no barrels, return 0
     };
     virtual const int getPlayerSonarChargeCount() { return iceman->getSonar(); };
@@ -104,11 +106,8 @@ public:
 private:
     Iceman* iceman = nullptr;
     std::vector<Agent*> agents; // Protesters & iceman
-	
-    std::vector<Squirt*> squirts; // for squirts
-
     std::vector<ActivatingObject*> aobj; // for barrels, gold, sonar, waterpools
-    std::vector<Ice*> iceField; // ice, boulders
+    std::vector<Actor*> iceField; // ice, boulders, squirts
     int ticks = 1; // global variable to keep track of ticks
     int currentLevelNumber = 1;
 
