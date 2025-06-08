@@ -37,13 +37,14 @@ public:
     virtual void cleanUp();
 
     void addActor(Actor* a);
+	Iceman* getIceman() const { return iceman; } // getter for iceman
     void clearIce(int x, int y);
     bool canActorMoveTo(Actor* a, int x, int y) const;
     int annoyAllNearbyActors(Actor* annoyer, int points, int radius);
     void revealAllNearbyObjects(int x, int y, int radius);
-    Actor* findNearbyIceMan(Actor* a, int radius) const;
-    Actor* findNearbyPickerUpper(Actor* a, int radius) const;
-    void annoyIceMan();
+    Iceman* findNearbyIceMan(Actor* a, int radius) const;
+    Agent* findNearbyPickerUpper(Actor* a, int radius) const;
+    //void annoyIceMan();
     void giveIceManSonar();
     void giveIceManWater();
     bool facingTowardIceMan(Actor* a) const;
@@ -61,12 +62,15 @@ public:
     virtual const int getSquirtsLeftInSquirtGun() { return iceman->getWater(); };
     virtual const int getPlayerGoldCount() { return iceman->getGold(); };
     virtual const int getBarrelsRemaining() {
+		int barrels = 0; // initialize barrels to 0
+
         for (int i = 0; i < aobj.size(); i++) {
             if (aobj[i]->getID() == IID_BARREL) {
-                return aobj[i]->needsToBePickedUpToFinishLevel();
+                barrels++;
             }
         }
-        return 0; // if no barrels, return 0
+        cout << barrels  << endl;
+        return barrels; // if no barrels, return 0
     };
     virtual const int getPlayerSonarChargeCount() { return iceman->getSonar(); };
 	virtual const int getTicks() const { return ticks; };
@@ -98,13 +102,15 @@ public:
 
 
 private:
-    Iceman* iceman;
-	std::vector<Squirt*> squirts; // for squirts
-    std::vector<Protester*> protesters; // Protesters
+    Iceman* iceman = nullptr;
+    std::vector<Agent*> agents; // Protesters & iceman
+	
+    std::vector<Squirt*> squirts; // for squirts
+
     std::vector<ActivatingObject*> aobj; // for barrels, gold, sonar, waterpools
     std::vector<Ice*> iceField; // ice, boulders
-    int ticks = 0; // global variable to keep track of ticks
-    int currentLevelNumber;
+    int ticks = 1; // global variable to keep track of ticks
+    int currentLevelNumber = 1;
 
 };
 

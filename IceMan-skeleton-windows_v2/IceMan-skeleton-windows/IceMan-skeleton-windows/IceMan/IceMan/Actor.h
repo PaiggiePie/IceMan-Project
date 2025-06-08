@@ -1,6 +1,8 @@
 #ifndef ACTOR_H_
 #define ACTOR_H_
-
+#include <cstdlib>
+#include <ctime>
+#include <random>
 #include "GraphObject.h"
 class StudentWorld;
 
@@ -20,7 +22,7 @@ public:
     bool isAlive() const;
 
     // getWorld function to return the StudentWorld pointer
-    virtual StudentWorld* setWorld(StudentWorld*& sp) const;
+    virtual void setWorld(StudentWorld*& sp) const;
     // Get this actor's world
     StudentWorld* getWorld() const { return sp; };
 
@@ -109,7 +111,7 @@ private:
     int m_sonar = 1;
     int m_gold = 0;
     //StudentWorld* sp = nullptr;
-    bool m_isAlive;
+    bool m_isAlive = true;
 
 };
 
@@ -156,6 +158,10 @@ public:
     RegularProtester(StudentWorld* sp, int x, int y, int ID);
     virtual void doSomething();
     virtual void addGold();
+	int getGold() const { return gold; } // getter for gold
+
+private:
+	int gold = 0; // number of gold nuggets collected by this protester
 };
 
 class HardcoreProtester : public Protester {
@@ -164,7 +170,11 @@ public:
     HardcoreProtester(StudentWorld* sp, int x, int y, int ID);
     virtual void doSomething();
     virtual void addGold();
+    int getGold() const { return gold; } // getter for gold
 
+
+private:
+    int gold = 0; // number of gold nuggets collected by this protester
 };
 
 
@@ -200,6 +210,13 @@ public:
     // Set number of ticks until this object dies
     bool canActorsPassThroughMe() const;
     void setTicksToLive();
+
+private:
+	//int m_ticksToLive = 0; // number of ticks until this object dies
+	//int m_soundToPlay; // sound to play when this object is activated
+	//bool m_activateOnPlayer; // true if this object activates on player, false otherwise
+	//bool m_activateOnProtester; // true if this object activates on protester, false otherwise
+	//bool m_initiallyActive; // true if this object is initially active, false otherwise
 };
 
 class BarrelsOfOil : public ActivatingObject {
@@ -210,10 +227,14 @@ public:
     ~BarrelsOfOil();
 };
 
-class GoldNugget : public ActivatingObject {
+class GoldNugget : public ActivatingObject { // ghost block
 public:
     GoldNugget(StudentWorld* sp, bool temporary);
     virtual void doSomething();
+
+private:
+    bool pickup = true; // true for iceman; false for protester
+	bool temporary = false; // true if temporary, false if permanent
 
 };
 

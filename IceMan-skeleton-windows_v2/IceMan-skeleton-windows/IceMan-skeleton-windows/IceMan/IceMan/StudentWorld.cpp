@@ -2,6 +2,8 @@
 #include "Actor.h"
 #include <string>
 #include <vector>
+#include <cmath>
+#include <random>
 using namespace std;
 
 class Actor;
@@ -20,14 +22,19 @@ StudentWorld::StudentWorld(std::string assetDir)
 
 //functions to implement
 
-StudentWorld* Actor::setWorld(StudentWorld*& sp) const {
+void Actor::setWorld(StudentWorld*& sp) const {
 	sp = sw;
 }
 
 int StudentWorld::init() {
-	StudentWorld* sp = nullptr;
 	// make iceman
-	iceman = new Iceman(sw);
+	this->iceman = new Iceman(sw);
+	if (getIceman() == nullptr)
+		cout << "null" << endl;
+	agents.push_back(iceman); // add iceman to agents vector
+	//random_device rd; // random number generator
+	//mt19937 gen(rd());
+	//uniform_int_distribution<> distrib(min, max);
 
 	//ice making code
 	for (int i = 0; i < 65; i++) {
@@ -44,15 +51,12 @@ int StudentWorld::init() {
 		}
 	}
 
-	/*for (auto& iceObj : iceField) {
-		iceObj->setVisible(true);
-	}*/
-
 	// make static objects
-	/*BarrelsOfOil* barrel = new BarrelsOfOil(this);
-	GoldNuggets* nugget = new GoldNuggets(this);
+	BarrelsOfOil* barrel = new BarrelsOfOil(this);
+	aobj.push_back(barrel);
+	/*GoldNuggets* nugget = new GoldNuggets(this);
 	Boulders* boulder = new Boulders(this);
-	actors.push_back(barrel);
+	
 	actors.push_back(nuggets);
 	actors.push_back(boulders);*/
 
@@ -61,7 +65,16 @@ int StudentWorld::init() {
 
 
 int StudentWorld::move() {
-	//updateDisplayText();
+	int random = (rand() % 64);
+	cout << random << endl;
+	int X = aobj[0]->getX();
+	int Y = aobj[0]->getY();
+	cout << X << ", " << Y << endl;
+	int health = getCurrentHealth();
+	cout << health << endl;
+	int sbs = std::abs((aobj[0]->getY() - getIceman()->getY()));
+	cout << sbs << endl;
+	setDisplayText();
 	ticks++; // increment ticks for each move
 	bool canAddP = false;
 	int G = currentLevelNumber * 30 + 290; // 1 in G chance of water kit or sonar kit added
@@ -69,21 +82,21 @@ int StudentWorld::move() {
 	currentLevelNumber = getLevel(); // get the current level number
 	int ticksToWaitBetweenMoves = max(0, (3 - currentLevelNumber / 4));
 	if (ticks % ticksToWaitBetweenMoves == 0) {
-		canAddP == true;
+		canAddP = true;
 	}
 	if (canAddP == true) {
 		//use probability of hardcore to determine if hardcore protester should be added
 		// use probability of protester spawning
 	}
-	if(iceman->isAlive())
-		iceman->doSomething(); // ask iceman to do something
-	// Give each Actor a chance to do something
-	for (auto& protesters : protesters) {
-		if (protesters->isAlive()) {
-			protesters->doSomething();
+	//if(iceman->isAlive())
+	//	iceman->doSomething(); // ask iceman to do something
+	//// Give each Actor a chance to do something
+	for (auto& agent : agents) {
+		if (agent->isAlive()) {
+			agent->doSomething();
 		}
 		else {
-			delete protesters; // delete dead protesters
+			delete agent; // delete dead protesters
 		}
 	}
 	for (auto& object : aobj) {
@@ -113,6 +126,8 @@ int StudentWorld::move() {
 		currentLevelNumber++;
 		return GWSTATUS_FINISHED_LEVEL;
 	}
+	if (ticks == 1000)
+		ticks = 1;
 	return GWSTATUS_CONTINUE_GAME;
 }
 
@@ -120,15 +135,16 @@ void StudentWorld::cleanUp() {
 	// after a player has lost a life (with more lives remaining) or has completed a level,
 	// or lost all lives or game is over
 	// delete all actors and ice objects 
-	delete iceman; // delete iceman
+	//delete this->iceman; // delete iceman
+	for (auto& agent : agents) {
+		delete agent; // delete all protesters
+	}
 	for (auto& squirt : squirts) {
 		delete squirt; // delete all squirts
 	}
 	squirts.clear(); 
-	for (auto& prots : protesters) {
-		delete prots; // delete all protesters
-	}
-	protesters.clear();
+	
+	agents.clear();
 	for (auto& object : aobj) {
 		delete object; // delete all actors
 	}
@@ -162,10 +178,21 @@ bool StudentWorld::canActorMoveTo(Actor* a, int x, int y) const {
 			return false; // another actor is in the way
 		}
 	}
+	return true;
 }
 
 int StudentWorld::annoyAllNearbyActors(Actor* annoyer, int points, int radius) {
-
+	if (findNearbyPickerUpper(annoyer, radius) != nullptr) { // if there is a nearby iceman or protester that can pick things up
+		Agent* nearbyAnnoyed = findNearbyPickerUpper(annoyer, radius);
+		if (nearbyAnnoyed->getID() == IID_PLAYER) { // if iceman is in radius
+			iceman->annoy(points); // annoy iceman
+			return 1; // return 1 for iceman
+		}
+		else {
+			nearbyAnnoyed->annoy(points); // annoy the nearby protester
+			return 2; // return 2 for protester
+		}
+	}
 }
 
 void StudentWorld::revealAllNearbyObjects(int x, int y, int radius) {
@@ -178,26 +205,29 @@ void StudentWorld::revealAllNearbyObjects(int x, int y, int radius) {
 
 // If the IceMan is within radius of a, return a pointer to the
 	  // IceMan, otherwise null.
-Actor* StudentWorld::findNearbyIceMan(Actor* a, int radius) const {
-	if (radius > abs((a->getX() - iceman->getX())) && radius > abs((a->getY() - iceman->getY())))
+Iceman* StudentWorld::findNearbyIceMan(Actor* a, int radius) const {
+	if (radius > std::abs((a->getX() - getIceman()->getX())) && radius > std::abs((a->getY() - getIceman()->getY())))
 		return iceman;
 	return nullptr;
 }
 
 // If at least one actor that can pick things up is within radius of a,
 	  // return a pointer to one of them, otherwise null.
-Actor* StudentWorld::findNearbyPickerUpper(Actor* a, int radius) const {
-	for (int i = 0; i < aobj.size(); i++) {
-		if (radius > abs((a->getX() - aobj[i]->getX())) && radius > abs((a->getY() - aobj[i]->getY())) && aobj[i]->canPickThingsUp() == true)
-			return aobj[i];
+Agent* StudentWorld::findNearbyPickerUpper(Actor* a, int radius) const {
+	for (int i = 0; i < agents.size(); i++) {
+		if (radius > abs((a->getX() - agents[i]->getX())) && radius > abs((a->getY() - agents[i]->getY())) && agents[i]->canPickThingsUp() == true)
+			return agents[i];
 	}
-	return nullptr;
+	if (radius > abs((a->getX() - iceman->getX())) && radius > abs((a->getY() - iceman->getY())) && iceman->canPickThingsUp() == true) {
+		return iceman; // if iceman is in radius, return iceman
+	}
+	return nullptr; // if no actors in radius, return null
 }
 
 // Annoy the IceMan.
-void StudentWorld::annoyIceMan() {
+/*void StudentWorld::annoyIceMan() {
 	iceman->annoy(1); // by how much?
-}
+}*/
 
 void StudentWorld::giveIceManSonar() {
 	iceman->addSonar(); // give iceman sonar
@@ -255,24 +285,25 @@ GraphObject::Direction StudentWorld::lineOfSightToIceMan(Actor* a) const {
 			}
 		}
 	}
-	else if (a->getY() == iceman->getY()) { // same y level as iceman
+
+	// same y level as iceman
+	else if (a->getY() == iceman->getY()) {
 		for (int i = a->getY(); i < iceman->getY(); i++) { //loop through each coord between iceman and actor
-			bool blocked = false;
-			
-			for (int t = 0; t < aobj.size(); t++) {// getX = x coords  i = y coords
-				if (aobj[t]->getX() == a->getX()) { // if there is not an object in the path
-					if (aobj[t]->getX() == i)
+			for (int t = 0; t < iceField.size(); t++) {// getX = x coords  i = y coords
+				if (iceField[t]->getX() == a->getX()) { // if there is not an object in the path
+					if (iceField[t]->getY() == i)
 						blocked = true;
-					if (blocked == false) { // if there is not an object in the path
-						if (a->getX() > iceman->getX()) {
-							return GraphObject::Direction::left;
-						}
-						else if (a->getX() < iceman->getX()) {
-							return GraphObject::Direction::right;
-						}
-					}
 
 				}
+
+			}
+		}
+		if (blocked == false) { // if there is not an object in the path
+			if (a->getY() > iceman->getY()) {
+				return GraphObject::Direction::up;
+			}
+			else if (a->getY() < iceman->getY()) {
+				return GraphObject::Direction::down;
 			}
 		}
 	}
@@ -280,15 +311,16 @@ GraphObject::Direction StudentWorld::lineOfSightToIceMan(Actor* a) const {
 }
 
 bool StudentWorld::isNearIceMan(Actor* a, int radius) const {
-	if (radius > (a->getX() - iceman->getX()) && radius > (a->getY() - iceman->getY()))
+	if (radius > abs((a->getX() - iceman->getX())) && radius > abs((a->getY() - iceman->getY())))
 		return true;
 	return false;
 }
 
-GraphObject::Direction determineFirstMoveToExit(int x, int y) {
-
+GraphObject::Direction StudentWorld::determineFirstMoveToExit(int x, int y) {
+	return GraphObject::Direction::none; // placeholder, implement logic to determine first move to exit
 }
-GraphObject::Direction determineFirstMoveToIceMan(int x, int y) {
+GraphObject::Direction StudentWorld::determineFirstMoveToIceMan(int x, int y) {
+	return GraphObject::Direction::none; // placeholder, implement logic to determine first move to exit
 
 }
 
