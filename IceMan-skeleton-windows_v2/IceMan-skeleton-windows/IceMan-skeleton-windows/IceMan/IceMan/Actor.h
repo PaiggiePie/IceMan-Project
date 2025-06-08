@@ -145,6 +145,7 @@ public:
 
       // Set number of ticks until next move
     void setTicksToNextMove();
+    virtual ~Protester();
 private:
     int m_gold = 0;
     bool m_state = false; //starts off not giving up protest
@@ -156,6 +157,8 @@ public:
     RegularProtester(StudentWorld* sp, int x, int y, int ID);
     virtual void doSomething();
     virtual void addGold();
+    virtual bool annoy(unsigned int amount);
+    virtual ~RegularProtester();
 };
 
 class HardcoreProtester: public Protester{
@@ -164,7 +167,8 @@ public:
     HardcoreProtester(StudentWorld* sp, int x, int y, int ID);
     virtual void doSomething();
     virtual void addGold();
-
+    virtual bool annoy(unsigned int amount);
+    virtual ~HardcoreProtester();
 };
 
 
@@ -173,6 +177,7 @@ public:
     Boulder(StudentWorld* sp);
     virtual bool canActorsPassThroughMe() const;
     virtual void doSomething();
+    virtual ~Boulder();
 };
 
 class Squirt : public Actor
@@ -180,6 +185,7 @@ class Squirt : public Actor
 public:
     Squirt(StudentWorld* sp, int x, int y, Direction dir);
     virtual void doSomething();
+    virtual ~Squirt();
 };
 
 
@@ -197,6 +203,9 @@ public:
       // Set number of ticks until this object dies
     bool canActorsPassThroughMe() const;
     void setTicksToLive();
+    virtual ~ActivatingObject();
+private:
+    int ticksToLive;
 };
 
 class BarrelsOfOil: public ActivatingObject{
@@ -204,14 +213,14 @@ public:
     BarrelsOfOil(StudentWorld* sp);
     virtual void doSomething();
     virtual bool needsToBePickedUpToFinishLevel() const;
-    ~BarrelsOfOil();
+    virtual ~BarrelsOfOil();
 };
 
 class GoldNugget: public ActivatingObject{
 public:
-    GoldNugget(StudentWorld* sp, bool temporary);
+    GoldNugget(StudentWorld* sp, int x, int y, bool temporary);
     virtual void doSomething();
-    
+    virtual ~GoldNugget();
 };
 
 
@@ -220,6 +229,7 @@ class SonarKit : public ActivatingObject
 public:
     SonarKit(StudentWorld* sp);
     virtual void doSomething();
+    virtual ~SonarKit();
 };
 
 class WaterPool : public ActivatingObject
@@ -227,6 +237,7 @@ class WaterPool : public ActivatingObject
 public:
     WaterPool(StudentWorld* sp);
     virtual void doSomething();
+    virtual ~WaterPool();
 };
 
 
