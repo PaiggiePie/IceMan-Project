@@ -4,51 +4,49 @@
 #include <vector>
 using namespace std;
 
+class Actor;
 StudentWorld* sw;
-int ticks = 0; // global variable to keep track of ticks
 GameWorld* createStudentWorld(string assetDir)
 {
 	sw = new StudentWorld(assetDir); // create a new StudentWorld object
-    return sw;
+	return sw;
 }
 
 StudentWorld::StudentWorld(std::string assetDir)
-    : GameWorld(assetDir) { //contructor
+	: GameWorld(assetDir) { //contructor
 
 
 }
 
 //functions to implement
 
-StudentWorld* Actor::getWorld(StudentWorld*& sp) const {
-	// This function returns the StudentWorld pointer associated with this Actor
-	return sp = sw;
+StudentWorld* Actor::setWorld(StudentWorld*& sp) const {
+	sp = sw;
 }
 
 int StudentWorld::init() {
 	StudentWorld* sp = nullptr;
-    // make iceman
-    Iceman* iceMan = new Iceman(this);
-    actors.push_back(iceMan);
+	// make iceman
+	iceman = new Iceman(sw);
 
-    //ice making code
-    for (int i = 0; i < 65; i++) {
-        for (int j = 0; j < 60; j++) {
-            if (i > 29 && i < 34 && j > 3) {
-                continue;
-            }
-            else {
-                Ice* iceObj = new Ice(this);
-                iceObj->moveTo(i, j);
-                iceField.push_back(iceObj);
-            }
-			
-        }
-    }
+	//ice making code
+	for (int i = 0; i < 65; i++) {
+		for (int j = 0; j < 60; j++) {
+			if (i > 29 && i < 34 && j > 3) {
+				continue;
+			}
+			else {
+				Ice* iceObj = new Ice(this);
+				iceObj->moveTo(i, j);
+				iceField.push_back(iceObj);
+			}
 
-	for (auto& iceObj : iceField) {
-        iceObj->setVisible(true);
+		}
 	}
+
+	/*for (auto& iceObj : iceField) {
+		iceObj->setVisible(true);
+	}*/
 
 	// make static objects
 	/*BarrelsOfOil* barrel = new BarrelsOfOil(this);
@@ -58,56 +56,239 @@ int StudentWorld::init() {
 	actors.push_back(nuggets);
 	actors.push_back(boulders);*/
 
-    return GWSTATUS_CONTINUE_GAME;
+	return GWSTATUS_CONTINUE_GAME;
 }
 
 
 int StudentWorld::move() {
 	//updateDisplayText();
-	//ticks++; // increment ticks for each move
+	ticks++; // increment ticks for each move
+	bool canAddP = false;
+	int G = currentLevelNumber * 30 + 290; // 1 in G chance of water kit or sonar kit added
+	int probabilityOfHardcore = min(90, currentLevelNumber * 10 + 30);
+	currentLevelNumber = getLevel(); // get the current level number
+	int ticksToWaitBetweenMoves = max(0, (3 - currentLevelNumber / 4));
+	if (ticks % ticksToWaitBetweenMoves == 0) {
+		canAddP == true;
+	}
+	if (canAddP == true) {
+		//use probability of hardcore to determine if hardcore protester should be added
+		// use probability of protester spawning
+	}
+	if(iceman->isAlive())
+		iceman->doSomething(); // ask iceman to do something
 	// Give each Actor a chance to do something
-
-	for (auto& actor : actors) {
-		if (actor->is_Alive()) {
-			actor->doSomething();
-			//actor->animate(); // animate the actor
+	for (auto& protesters : protesters) {
+		if (protesters->isAlive()) {
+			protesters->doSomething();
 		}
 		else {
-			delete actor; // delete dead actors
+			delete protesters; // delete dead protesters
+		}
+	}
+	for (auto& object : aobj) {
+		if (object->isAlive()) {
+			object->doSomething();
+		}
+		else {
+			delete object; // delete dead actors
 		}
 	}
 
-	
- //   int T = std::max(25, (200 - ((int) getLevel()))); // # of tick to wait for new protester
-	//int P = std::min(15.0, (2 + ((int) getLevel()) * 1.5)); // # of Protesters that should be on field
-	//int probabilityOfHardcore = std::min(90, ((int) getLevel() * 10 + 30));
 
-	//if (probabilityOfHardcore)
+	//   int T = std::max(25, (200 - ((int) getLevel()))); // # of tick to wait for new protester
+	   //int P = std::min(15.0, (2 + ((int) getLevel()) * 1.5)); // # of Protesters that should be on field
+	   //int probabilityOfHardcore = std::min(90, ((int) getLevel() * 10 + 30));
+
+	   //if (probabilityOfHardcore)
 
 
 	if (isGameOver() == true) {
+		playSound(SOUND_PLAYER_GIVE_UP);
 		return GWSTATUS_PLAYER_DIED; // if player died
 	}
-	//if () {
-		//playFinishedLevelSound();
-		//return GWSTATUS_FINISHED_LEVEL;
-	//}
-    return GWSTATUS_CONTINUE_GAME;
+
+	if (getBarrelsRemaining() == 0) {
+		playSound(SOUND_FINISHED_LEVEL);
+		currentLevelNumber++;
+		return GWSTATUS_FINISHED_LEVEL;
+	}
+	return GWSTATUS_CONTINUE_GAME;
 }
 
 void StudentWorld::cleanUp() {
 	// after a player has lost a life (with more lives remaining) or has completed a level,
-    // or lost all lives or game is over
+	// or lost all lives or game is over
 	// delete all actors and ice objects 
-
-	for (auto& actor : actors) {
-		delete actor; // delete all actors
+	delete iceman; // delete iceman
+	for (auto& squirt : squirts) {
+		delete squirt; // delete all squirts
 	}
-	actors.clear();
+	squirts.clear(); 
+	for (auto& prots : protesters) {
+		delete prots; // delete all protesters
+	}
+	protesters.clear();
+	for (auto& object : aobj) {
+		delete object; // delete all actors
+	}
+	aobj.clear();
 	for (auto& iceObj : iceField) {
 		delete iceObj; // delete all ice objects
 	}
 	iceField.clear();
+
+}
+
+void StudentWorld::addActor(Actor* a) {
+
+}
+
+void StudentWorld::clearIce(int x, int y) {
+
+}
+
+bool StudentWorld::canActorMoveTo(Actor* a, int x, int y) const {
+	if (x < 0 || x >= 64 || y < 0 || y >= 60) {
+		return false; // out of bounds
+	}
+	for (auto& ice : iceField) {
+		if (ice->getX() == x && ice->getY() == y) {
+			return false; // ice blocks and boulders
+		}
+	}
+	for (auto& actor : aobj) { // for barrels, gold, sonar, waterpools
+		if (actor->getX() == x && actor->getY() == y) {
+			return false; // another actor is in the way
+		}
+	}
+}
+
+int StudentWorld::annoyAllNearbyActors(Actor* annoyer, int points, int radius) {
+
+}
+
+void StudentWorld::revealAllNearbyObjects(int x, int y, int radius) {
+	for (auto& actor : aobj) {
+		if (isNearIceMan(actor, radius)) {
+			actor->setVisible(true); // reveal the actor
+		}
+	}
+}
+
+// If the IceMan is within radius of a, return a pointer to the
+	  // IceMan, otherwise null.
+Actor* StudentWorld::findNearbyIceMan(Actor* a, int radius) const {
+	if (radius > abs((a->getX() - iceman->getX())) && radius > abs((a->getY() - iceman->getY())))
+		return iceman;
+	return nullptr;
+}
+
+// If at least one actor that can pick things up is within radius of a,
+	  // return a pointer to one of them, otherwise null.
+Actor* StudentWorld::findNearbyPickerUpper(Actor* a, int radius) const {
+	for (int i = 0; i < aobj.size(); i++) {
+		if (radius > abs((a->getX() - aobj[i]->getX())) && radius > abs((a->getY() - aobj[i]->getY())) && aobj[i]->canPickThingsUp() == true)
+			return aobj[i];
+	}
+	return nullptr;
+}
+
+// Annoy the IceMan.
+void StudentWorld::annoyIceMan() {
+	iceman->annoy(1); // by how much?
+}
+
+void StudentWorld::giveIceManSonar() {
+	iceman->addSonar(); // give iceman sonar
+}
+
+void StudentWorld::giveIceManWater() {
+	iceman->addWater();
+}
+
+// Is the Actor a facing toward the IceMan?
+bool StudentWorld::facingTowardIceMan(Actor* a) const {
+	if (a->getX() == iceman->getX() ) { // same x level && right side of iceman
+		if (a->getDirection() == GraphObject::Direction::left && a->getX() > iceman->getX())
+			return true; // actor is facing left towards iceman
+		else if (a->getDirection() == GraphObject::Direction::right && a->getX() < iceman->getX()) {
+			return true; // actor is facing right away from iceman
+		}
+	}
+	if (a->getY() == iceman->getY()) { // same y level && above iceman
+		if (a->getDirection() == GraphObject::Direction::up && a->getY() < iceman->getY())
+			return true; // actor is facing up towards iceman
+		else if (a->getDirection() == GraphObject::Direction::down && a->getY() > iceman->getY()) {
+			return true; // actor is facing down away from iceman
+		}
+	}
+	return false;
+}
+
+// If the Actor a has a clear line of sight to the IceMan, return
+	  // the direction to the IceMan, otherwise GraphObject::none.
+GraphObject::Direction StudentWorld::lineOfSightToIceMan(Actor* a) const {
+	if (facingTowardIceMan(a) == false) {
+		return GraphObject::Direction::none; // if actor is not facing towards iceman, return none
+	}
+	bool blocked = false; // if there is an object in the way
+
+	if (a->getX() == iceman->getX()) { // same x level as iceman
+		for (int i = a->getX(); i < iceman->getX(); i++) { //starting at actor, ending at iceman
+			for (int h = 0; h < iceField.size(); h++) {// i = x coords  getY = y coords
+				if (iceField[h]->getY() == a->getY()) {
+					if (iceField[h]->getX() == i) {
+						blocked = true;
+					}
+
+
+				}
+			}
+		}
+		if (blocked == false) { // if there is not an object in the path
+			if (a->getX() > iceman->getX()) {
+				return GraphObject::Direction::left;
+			}
+			else if (a->getX() < iceman->getX()) {
+				return GraphObject::Direction::right;
+			}
+		}
+	}
+	else if (a->getY() == iceman->getY()) { // same y level as iceman
+		for (int i = a->getY(); i < iceman->getY(); i++) { //loop through each coord between iceman and actor
+			bool blocked = false;
+			
+			for (int t = 0; t < aobj.size(); t++) {// getX = x coords  i = y coords
+				if (aobj[t]->getX() == a->getX()) { // if there is not an object in the path
+					if (aobj[t]->getX() == i)
+						blocked = true;
+					if (blocked == false) { // if there is not an object in the path
+						if (a->getX() > iceman->getX()) {
+							return GraphObject::Direction::left;
+						}
+						else if (a->getX() < iceman->getX()) {
+							return GraphObject::Direction::right;
+						}
+					}
+
+				}
+			}
+		}
+	}
+	return GraphObject::Direction::none;
+}
+
+bool StudentWorld::isNearIceMan(Actor* a, int radius) const {
+	if (radius > (a->getX() - iceman->getX()) && radius > (a->getY() - iceman->getY()))
+		return true;
+	return false;
+}
+
+GraphObject::Direction determineFirstMoveToExit(int x, int y) {
+
+}
+GraphObject::Direction determineFirstMoveToIceMan(int x, int y) {
 
 }
 
@@ -162,5 +343,3 @@ return GWSTATUS_FINISHED_LEVEL;
 return GWSTATUS_CONTINUE_GAME;
 }
 */
-
-
