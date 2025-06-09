@@ -8,10 +8,10 @@
 
 //contructor
 Actor::Actor(StudentWorld* sp, int ID, int x, int y, Direction dir, double siz, unsigned int dep, bool visible) :
-    GraphObject(ID, x, y, dir, siz, dep) {
+    GraphObject(ID, x, y, dir, siz, dep), sp(sp) {
     setWorld(sp); // set the world pointer
     //cout << "Actor ctor" << endl;
-	srand(time(0)); // seed the random number generator
+	//srand(time(0)); // seed the random number generator
 
 }
 
@@ -305,8 +305,7 @@ RegularProtester::RegularProtester(StudentWorld* sp, int x, int y, int ID) : Pro
 
 }
 
-void RegularProtester::doSomething() {}
-void RegularProtester::addGold() {
+void RegularProtester::doSomething() {
 
 }
 
@@ -316,11 +315,9 @@ HardcoreProtester::HardcoreProtester(StudentWorld* sp, int x, int y, int ID) :Pr
 
 }
 
-void HardcoreProtester::doSomething() {}
-void HardcoreProtester::addGold() {
+void HardcoreProtester::doSomething() {
 
 }
-
 
 
 //******************************** Ice Methods *******************************
@@ -339,8 +336,8 @@ Ice::~Ice() {
     Ice::getGraphObjects(3).erase(this); // remove from the set of graph objects
 }
 
-void Ice::doSomething() {
-    // Ice does not perform any actions
+void Ice::doSomething() { // Ice does not perform any actions
+    return;
 }
 
 //******************************** Boulder Methods *******************************
@@ -450,25 +447,25 @@ void ActivatingObject::setTicksToLive() {
 //******************************** Oil Methods *******************************
 BarrelsOfOil::BarrelsOfOil(StudentWorld* sp) : ActivatingObject(sp, (std::rand() % 59), (std::rand() % 59), IID_BARREL, SOUND_FOUND_OIL, true, false, false) {
     getGraphObjects(2).insert(this);
-    //moveTo((std::rand() % 59), (std::rand() % 59)); // random position in the world
     cout << "Barrels of Oil ctor" << endl;
 }
 
 void BarrelsOfOil::doSomething() {
     if (isAlive()) {
-        if (isVisible() == false && getWorld()->findNearbyIceMan(this, 4)) { // if not visible and iceman is in radius 4
+        if (isVisible() == false && sp->findNearbyIceMan(this, 4)  != nullptr) { // if not visible and iceman is in radius 4
             setVisible(true); // make visible
             return;
         }
-        if (getWorld()->findNearbyIceMan(this, 3)) {
-            this->setDead(); // if iceman is in radius 3, set dead
+        if (sp->findNearbyIceMan(this, 3) != nullptr) {
+            cout << "barrel picked up" << endl;
             sp->playSound(SOUND_FOUND_OIL); // play sound
-            getWorld()->increaseScore(1000); // increase score by 10
+            sp->increaseScore(1000); // increase score by 10
+            setDead(); // if iceman is in radius 3, set dead
+            if (!isAlive())
+                cout << "barrel picked up" << endl;
             return;
         }
     }
-    else
-        return;
 }
 
 bool BarrelsOfOil::needsToBePickedUpToFinishLevel() const {
@@ -478,6 +475,7 @@ bool BarrelsOfOil::needsToBePickedUpToFinishLevel() const {
 BarrelsOfOil::~BarrelsOfOil() {
     setVisible(false);
     BarrelsOfOil::getGraphObjects(2).erase(this); // remove from the set of graph objects
+    cout << "barrelofoil dtor" << endl;
 }
 
 
@@ -488,6 +486,7 @@ GoldNugget::GoldNugget(StudentWorld* sp, bool temporary)
 	, temporary(temporary), pickup(true)  // initialize temporary, pickup, and lifetime
 {
     getGraphObjects(2).insert(this);
+    lifetime = -1;
     //moveTo((std::rand() % 59), (std::rand() % 59)); // random position in the world
     cout << "gold ctor" << endl;
 }
@@ -503,23 +502,12 @@ void GoldNugget::doSomething() {
         return; // if not alive, do nothing
     }
 
-    if (temporary == true) {
-        if (lifetime == -1) {
-            lifetime = getWorld()->getTicks() + 800; // set lifetime to 800 ticks
-        }
-        // if temporary, set dead after lifetime of ticks
-        if (getWorld()->getTicks() == lifetime) {
-            setDead();
-            lifetime = -1; // reset lifetime
-        }
-    }
-
-    if (isVisible() == false && getWorld()->findNearbyIceMan(this, 4)) { // if not visible and iceman is in radius 4
+    if (isVisible() == false && sp->findNearbyIceMan(this, 4) != nullptr) { // if not visible and iceman is in radius 4
         setVisible(true); // make visible
         return;
     }
 
-    Agent* a = getWorld()->findNearbyPickerUpper(this, 3); // find nearby protester or iceman
+    Agent* a = sp->findNearbyPickerUpper(this, 3); // find nearby protester or iceman
     if (a != nullptr) {
         if (a->getID() == IID_PLAYER && pickup == true) {
             setDead(); // if iceman is in radius 3, set dead
@@ -530,15 +518,38 @@ void GoldNugget::doSomething() {
             return;
         }
 
-        else if ((a->getID() == IID_PROTESTER || a->getID() == IID_HARD_CORE_PROTESTER) && pickup == false) {
+        else if ((a->getID() == IID_PROTESTER || a->getID() == IID_HARD_CORE_PROTESTER) 
+                && pickup == false) {
             a->addGold(); // add gold to protester inventory
             this->setDead(); // if protester is in radius 3, set dead
             sp->playSound(SOUND_GOT_GOODIE); // play sound
-            getWorld()->increaseScore(25); // increase score by 25
+            sp->increaseScore(25); // increase score by 25
             return;
         }
     }
+    
+    if (temporary == true) {
+        if (lifetime == -1) {
+            cout << "dead" << endl;
+            setTicksToLive(); // set lifetime to 800 ticks
+        }
+        // if temporary, set dead after lifetime of ticks
+        if (sp->getTicks() == lifetime) {
+            setDead();
+            lifetime = -1; // reset lifetime
+        }
+    }
+}
 
+void GoldNugget::setTicksToLive() {
+    int ticks = sp->getTicks();
+
+    if (sp->getTicks() < 0) {
+        lifetime = 2000;
+    }
+    else {
+        lifetime = ticks + 2000; // set lifetime to 800 ticks
+    }
 }
 
 //******************************** Water Pool Methods *******************************
@@ -556,14 +567,14 @@ void WaterPool::doSomething() {
         if (lifetime == -1) {
             setTicksToLive(); // set lifetime if not set
         }
-        if (getWorld()->getTicks() == lifetime) {
+        if (sp->getTicks() == lifetime) {
             setDead(); // set dead after lifetime
             lifetime = -1; // reset lifetime
         }
         if (getWorld()->findNearbyIceMan(this, 3)) {
             sp->playSound(SOUND_GOT_GOODIE); // play sound
-            getWorld()->getIceman()->addWater(); // add water to iceman inventory
-            getWorld()->increaseScore(100); // increase score by 50
+            sp->getIceman()->addWater(); // add water to iceman inventory
+            sp->increaseScore(100); // increase score by 50
             setDead(); // set dead
         }
     }
@@ -571,7 +582,7 @@ void WaterPool::doSomething() {
 
 void WaterPool::setTicksToLive() {
 	int T = std::max(100, (int) (300 - 19 * sp->getLevel())); // set lifetime to T ticks
-	lifetime = getWorld()->getTicks() + T; // set lifetime to T ticks
+	lifetime = sp->getTicks() + T; // set lifetime to T ticks
 }
 
 //******************************** SonarKit Methods *******************************
@@ -584,7 +595,7 @@ void SonarKit::doSomething() {
         if (lifetime == -1) {
             setTicksToLive();
         }
-        if (getWorld()->getTicks() == lifetime) {
+        if (sp->getTicks() == lifetime) {
             setDead();
             lifetime = -1; // reset lifetime
         }
@@ -601,7 +612,7 @@ void SonarKit::doSomething() {
 }
 
 void SonarKit::setTicksToLive() {
-	int currentLevelNumber = getWorld()->getLevel();  
+	int currentLevelNumber = sp->getLevel(); 
     int T = max(100, 300 - 10 * currentLevelNumber);
-	lifetime = getWorld()->getTicks() + T; // set lifetime to T ticks
+	lifetime = sp->getTicks() + T; // set lifetime to T ticks
 }

@@ -51,13 +51,13 @@ int StudentWorld::init() {
 
 		}
 	}
-	GoldNugget* nugget = new GoldNugget(sw, false);
-	aobj.push_back(nugget);
+	
 	// make static objects
-	/*BarrelsOfOil* barrel = new BarrelsOfOil(this);
+	BarrelsOfOil* barrel = new BarrelsOfOil(this);
 	aobj.push_back(barrel);
-	
-	
+	/*GoldNugget* nugget = new GoldNugget(sw, false);
+	aobj.push_back(nugget);*/
+	/*
 	Boulder* boulder = new Boulder(this);
 	iceField.push_back(boulder);*/
 
@@ -67,21 +67,17 @@ int StudentWorld::init() {
 
 int StudentWorld::move() {
 	//testing
-	if (aobj[0]) {
+	/*if (aobj[0] != NULL) {
 		int X = aobj[0]->getX();
 		int Y = aobj[0]->getY();
 		cout << X << ", " << Y << endl;
-	}
-	cout << "health: " << getCurrentHealth() << endl;
+	}*/
+	cout << "Score: " << getScore() << endl;
 	cout << "Level: " << getLevel() << endl;
 
-
-
+	cout << "tick: " << ticks << endl;
 
 	setDisplayText();
-	ticks++; // increment ticks for each move
-	if (ticks == 1000)
-		ticks = 1;
 	bool canAddP = false;
 	int G = currentLevelNumber * 30 + 290; // 1 in G chance of water kit or sonar kit added
 	int probabilityOfHardcore = min(90, currentLevelNumber * 10 + 30);
@@ -99,24 +95,34 @@ int StudentWorld::move() {
 	//	iceman->doSomething(); // ask iceman to do something
 	
 	// Give each Actor a chance to do something
+	int agenti = 0;
 	for (auto& agent : agents) {
 		if (agent->isAlive()) {
 			agent->doSomething();
+			if (agent->isAlive() == false) {
+				cout << "agent died" << endl;
+				agents.erase(agents.begin() + agenti); // remove dead agent from vector
+			}
 		}
 		else {
 			delete agent; // delete dead protesters
 		}
+		agenti++;
 	}
+	int aobji = 0; // index for aobj vector
 	for (auto& object : aobj) {
 		if (object->isAlive() && object) {
 			object->doSomething();
-			if (object->isAlive() == false)
+			 // increment index for next object
+			if (object->isAlive() == false) {
+				cout << "died" << endl; 
+				cout << aobj.size() << endl;
+				aobj.erase((aobj.begin() + aobji));
+				cout << aobj.size() << endl;
 				delete object;
+			}
 		}
-		else {
-			delete object; // delete dead actors
-		}
-		
+		aobji++;
 	}
 	for (auto& ice : iceField)
 		ice->doSomething(); 
@@ -138,12 +144,13 @@ int StudentWorld::move() {
 		return GWSTATUS_PLAYER_DIED; // if player died
 	}
 
-	/*if (getBarrelsRemaining() == 0) {
+	if (getBarrelsRemaining() == 0) {
 		playSound(SOUND_FINISHED_LEVEL);
 		currentLevelNumber++;
 		return GWSTATUS_FINISHED_LEVEL;
-	}*/
+	}
 
+	ticks++; // increment ticks for each move
 	return GWSTATUS_CONTINUE_GAME;
 }
 
@@ -180,13 +187,13 @@ void StudentWorld::addActor(Actor* a) {
 void StudentWorld::clearIce(int x, int y) {
 	for (auto& iceObj : iceField) {
 		if ((iceObj->getX() == x ||
-			iceObj->getX() == x + 1 ||
-			iceObj->getX() == x + 2 ||
-			iceObj->getX() == x + 3) &&
-			(iceObj->getY() == y ||
+				iceObj->getX() == x + 1 ||
+				iceObj->getX() == x + 2 ||
+				iceObj->getX() == x + 3) &&
+				(iceObj->getY() == y ||
 				iceObj->getY() == y + 1 ||
 				iceObj->getY() == y + 2 ||
-				iceObj->getY() == y + 3)) {
+				iceObj->getY() == y + 3) && iceObj->isVisible()) {
 			iceObj->setVisible(false);
 			if (ticks % 10 == 0)
 				playSound(SOUND_DIG);
@@ -238,8 +245,13 @@ void StudentWorld::revealAllNearbyObjects(int x, int y, int radius) {
 // If the IceMan is within radius of a, return a pointer to the
 	  // IceMan, otherwise null.
 Iceman* StudentWorld::findNearbyIceMan(Actor* a, int radius) const {
-	if (radius > std::abs((a->getX() - getIceman()->getX())) && radius > std::abs((a->getY() - getIceman()->getY())))
-		return iceman;
+	if (iceman == nullptr || a == nullptr)
+		return nullptr;
+
+	if (iceman->isAlive()) {
+		if (radius > std::abs((a->getX() - iceman->getX())) && radius > std::abs((a->getY() - iceman->getY())))
+			return iceman;
+	}
 	return nullptr;
 }
 

@@ -24,7 +24,7 @@ public:
     // getWorld function to return the StudentWorld pointer
     virtual void setWorld(StudentWorld*& sp) const;
     // Get this actor's world
-    StudentWorld* getWorld() { setWorld(sp);  return sp; };
+    StudentWorld* getWorld() const {  return sp; };
 
     // Mark this actor as dead.
     void setDead();
@@ -57,7 +57,7 @@ protected:
     StudentWorld* sp = nullptr;
 
 private:
-    bool m_isAlive{ true };//alive or dead
+    bool m_isAlive = true; // alive or dead
 };
 
 class Agent : public Actor {
@@ -106,10 +106,10 @@ public:
     unsigned int getWater() const;
     ~Iceman();
 private:
-    int m_hits = 10;
-    int m_squirts = 5;
-    int m_sonar = 1;
-    int m_gold = 0;
+    unsigned int m_hits = 10;
+    unsigned int m_squirts = 5;
+    unsigned int m_sonar = 1;
+    unsigned int m_gold = 0;
     //StudentWorld* sp = nullptr;
     bool m_isAlive = true;
 
@@ -139,7 +139,8 @@ public:
         unsigned int hitPoints, unsigned int score);
     virtual void doSomething();
     virtual bool annoy(unsigned int amount);
-    virtual void addGold();
+    virtual void addGold() override;
+    unsigned int getGold() const { return m_gold; } // getter for gold
     virtual bool huntsIceMan() const;
 
     // Set state to having gien up protest
@@ -147,8 +148,9 @@ public:
 
     // Set number of ticks until next move
     void setTicksToNextMove();
+
 private:
-    int m_gold = 0;
+    unsigned int m_gold = 0;
     bool m_state = false; //starts off not giving up protest
 };
 
@@ -157,11 +159,9 @@ class RegularProtester : public Protester {
 public:
     RegularProtester(StudentWorld* sp, int x, int y, int ID);
     virtual void doSomething();
-    virtual void addGold();
-	int getGold() const { return gold; } // getter for gold
 
 private:
-	int gold = 0; // number of gold nuggets collected by this protester
+
 };
 
 class HardcoreProtester : public Protester {
@@ -169,12 +169,10 @@ class HardcoreProtester : public Protester {
 public:
     HardcoreProtester(StudentWorld* sp, int x, int y, int ID);
     virtual void doSomething();
-    virtual void addGold();
-    int getGold() const { return gold; } // getter for gold
 
 
 private:
-    int gold = 0; // number of gold nuggets collected by this protester
+
 };
 
 
@@ -239,9 +237,10 @@ public:
     GoldNugget(StudentWorld* sp, bool temporary);
     ~GoldNugget();
     virtual void doSomething();
+	void setTicksToLive();
 
 private:
-    int lifetime = -1; // -1 = not set
+    int lifetime; // -1 = not set
     bool pickup = true; // true for iceman; false for protester
 	bool temporary = false; // true if temporary, false if permanent
 
