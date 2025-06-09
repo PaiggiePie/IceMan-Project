@@ -21,6 +21,7 @@ public:
 
      // getWorld function to return the StudentWorld pointer
     virtual StudentWorld* getWorld(StudentWorld*& sp) const;
+    
      // Get this actor's world
     StudentWorld* getWorld() const;
     
@@ -73,7 +74,7 @@ public:
     virtual bool canPickThingsUp() const;
     
 private:
-    unsigned int hitPoints = 10;
+    unsigned int hitPoints = 100;
 };
 
 
@@ -84,7 +85,7 @@ public:
     //contructor declaration
     Iceman(StudentWorld* sp);
     virtual void doSomething();
-
+    void setDead();
     virtual bool annoy(unsigned int amount);
     virtual bool canDigThroughIce() const;
     virtual void addGold();
@@ -104,10 +105,10 @@ public:
     unsigned int getWater() const;
     ~Iceman();
 private:
-    int m_hits = 10;
+   // int m_hits = 100;
     int m_squirts = 5;
     int m_sonar = 1;
-    int m_gold = 0;
+    int m_gold = 2;
     //StudentWorld* sp = nullptr;
     bool m_isAlive;
 
@@ -146,8 +147,10 @@ public:
       // Set number of ticks until next move
     void setTicksToNextMove();
     virtual ~Protester();
+    int getGold() const { return m_gold;} // getter for gold
+
 private:
-    int m_gold = 0;
+    int m_gold = 0; // number of gold nuggets for protesters
     bool m_state = false; //starts off not giving up protest
 };
 
@@ -159,6 +162,7 @@ public:
     virtual void addGold();
     virtual bool annoy(unsigned int amount);
     virtual ~RegularProtester();
+
 };
 
 class HardcoreProtester: public Protester{
@@ -178,6 +182,9 @@ public:
     virtual bool canActorsPassThroughMe() const;
     virtual void doSomething();
     virtual ~Boulder();
+private:
+    bool fallingState = false;
+
 };
 
 class Squirt : public Actor
@@ -221,6 +228,10 @@ public:
     GoldNugget(StudentWorld* sp, int x, int y, bool temporary);
     virtual void doSomething();
     virtual ~GoldNugget();
+private:
+    bool pickup = true; // true for iceman; false for protester
+    bool temporary = false; // true if temporary, false if permanent
+
 };
 
 
