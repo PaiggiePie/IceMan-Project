@@ -80,11 +80,12 @@ int StudentWorld::init(){
     // make static objects
         BarrelsOfOil* barrel = new BarrelsOfOil(this);
         aobj.push_back(barrel);
-        /*GoldNuggets* nugget = new GoldNuggets(this);
-        Boulders* boulder = new Boulders(this);
-        
-        actors.push_back(nuggets);
-        actors.push_back(boulders);*/
+    
+    //Adding obejcts to the field test code
+        GoldNugget* nugget = new GoldNugget(this, 0, 60, true);
+        Boulder* boulder = new Boulder(this);
+        aobj.push_back(nugget);
+        iceField.push_back(boulder);
 
    /* for (auto& iceObj : iceField) {
             iceObj->setVisible(true);
@@ -96,10 +97,10 @@ int StudentWorld::init(){
 
 int StudentWorld::move(){
 
-    cout << "Score: " << getScore() << endl;
-    cout << "Level: " << getLevel() << endl;
+    //cout << "Score: " << getScore() << endl;
+    //cout << "Level: " << getLevel() << endl;
 
-    cout << "tick: " << ticks << endl;
+    //cout << "tick: " << ticks << endl;
 
     setDisplayText();
     bool canAddP = false;
@@ -141,10 +142,10 @@ int StudentWorld::move(){
             object->doSomething();
              // increment index for next object
             if (object->isAlive() == false) {
-                cout << "died" << endl;
-                cout << aobj.size() << endl;
+                //cout << "died" << endl;
+                //cout << aobj.size() << endl;
                 aobj.erase((aobj.begin() + aobji));
-                cout << aobj.size() << endl;
+                //cout << aobj.size() << endl;
                 delete object;
             }
         }
@@ -183,18 +184,18 @@ void StudentWorld::cleanUp(){
     // after a player has lost a life (with more lives remaining) or has completed a level,
     // or lost all lives or game is over
     // delete all actors and ice objects
-    for (auto& agent : agents) {
-        delete agent; // delete all protesters
-    }
-    agents.clear();
-    for (auto& object : aobj) {
-        delete object; // delete all actors
-    }
-    aobj.clear();
-    for (auto& iceObj : iceField) {
-        delete iceObj; // delete all ice objects
-    }
-    iceField.clear();
+        for (auto& agent : agents) {
+            delete agent; // delete all protesters
+        }
+        agents.clear();
+        for (auto& object : aobj) {
+            delete object; // delete all actors
+        }
+        aobj.clear();
+        for (auto& iceObj : iceField) {
+            delete iceObj; // delete all ice objects
+        }
+        iceField.clear();
 
 }
 
@@ -225,7 +226,7 @@ void StudentWorld::clearIce(int x, int y){
             iceObj->getY() == y + 2   ||
             iceObj->getY() == y + 3)){
             iceObj->setVisible(false);
-            if (ticks % 10 == 0)
+            if (ticks % 5 == 0)
                 playSound(SOUND_DIG);
             iceObj->setDead();
         }
@@ -302,11 +303,14 @@ void StudentWorld::revealAllNearbyObjects(int x, int y, int radius){
 // If the IceMan is within radius of a, return a pointer to the
 // IceMan, otherwise null.
 Actor* StudentWorld::findNearbyIceMan(Actor* a, int radius) const {
-        if (iceman != nullptr || iceman->isAlive()) {
-            if (radius > std::abs((a->getX() - iceman->getX())) && radius > std::abs((a->getY() - iceman->getY())))
-                return iceman;
-        }
+    if (iceman == nullptr || a == nullptr)
         return nullptr;
+
+    if (iceman->isAlive()) {
+        if (radius > std::abs((a->getX() - iceman->getX())) && radius > std::abs((a->getY() - iceman->getY())))
+            return iceman;
+    }
+    return nullptr;
 }
 
 // If at least one actor that can pick things up is within radius of a,
@@ -422,10 +426,20 @@ bool StudentWorld::isNearIceMan(Actor* a, int radius) const{
     return false;
 }
 
+
+bool StudentWorld::nearBoulder(int x, int y, int radius) const {
+    for (int i = 0; i < iceField.size(); i++) {
+        if (iceField[i]->getID() == IID_BOULDER) { // if there is a boulder in the iceField
+            if (radius > abs((x - iceField[i]->getX())) && radius > abs((y - iceField[i]->getY())))
+                return true; // if boulder is in radius, return true
+        }
+    }
+    return false;
+}
+
   // Determine the direction of the first move a quitting protester
   // makes to leave the oil field.
 GraphObject::Direction determineFirstMoveToExit(int x, int y){
-    ActivatingObject::Direction d{};
     return GraphObject::none;
 }
 
