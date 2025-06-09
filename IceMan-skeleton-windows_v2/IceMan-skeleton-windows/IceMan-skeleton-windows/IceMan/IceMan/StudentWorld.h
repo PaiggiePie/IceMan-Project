@@ -51,7 +51,7 @@ public:
       // If the IceMan is within radius of a, return a pointer to the
       // IceMan, otherwise null.
     Actor* findNearbyIceMan(Actor* a, int radius) const;
-
+    bool nearBoulder(int x, int y, int radius) const;
       // If at least one actor that can pick things up is within radius of a,
       // return a pointer to one of them, otherwise null.
     //Agent* findNearbyPickerUpper(Agent* a, int radius) const;
@@ -98,7 +98,7 @@ public:
                 barrels++;
             }
         }
-        cout << barrels  << endl;
+        //cout << barrels  << endl;
         return barrels; // if no barrels, return 0
     };
     
