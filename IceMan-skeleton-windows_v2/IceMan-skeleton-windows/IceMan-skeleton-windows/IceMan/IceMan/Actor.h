@@ -1,63 +1,118 @@
 #ifndef ACTOR_H_
 #define ACTOR_H_
-
+#include <cstdlib>
+#include <cmath>
+#include <random>
 #include "GraphObject.h"
 class StudentWorld;
 
 using namespace std;
 
 // Students:  Add code to this file, Actor.cpp, StudentWorld.h, and StudentWorld.cpp
-
 class Actor : public GraphObject {
 public:
 
-    //parametized constructor to allow each derived class to have unique position and size
-    Actor(int ID, int x, int y, Direction dir, double siz, unsigned int dep);
-
-    bool is_Alive();
-
-    //virtual functions
     virtual void doSomething() = 0;
+    //parametized constructor
+    Actor(StudentWorld* sp, int ID, int x, int y, Direction dir, double siz, unsigned int dep, bool visible);
+
     virtual ~Actor();
-    
-    
-	
-	// getWorld function to return the StudentWorld pointer
-    virtual StudentWorld* getWorld(StudentWorld*& sp) const;
+
+    //returns true if actor is alive
+    bool isAlive() const;
+
+    // getWorld function to return the StudentWorld pointer
+    virtual void setWorld(StudentWorld*& sp) const;
+    // Get this actor's world
+    StudentWorld* getWorld() const {  return sp; };
+
+    // Mark this actor as dead.
+    void setDead();
+
+    // Annoy this actor.
+    virtual bool annoy(unsigned int amt);
+
+    // Can this actor dig through Ice?
+    virtual bool canDigThroughIce() const;
+
+    // Can other actors pass through this actor?
+    virtual bool canActorsPassThroughMe() const;
+
+    // Can this actor pick items up?
+    virtual bool canPickThingsUp() const;
+
+    // Does this actor hunt the IceMan?
+    virtual bool huntsIceMan() const;
+
+    // Can this actor need to be picked up to finish the level?
+    virtual bool needsToBePickedUpToFinishLevel() const;
+
+    // Move this actor to x,y if possible, and return true; otherwise,
+    // return false without moving.
+    bool moveToIfPossible(int x, int y);
 
 protected:
     // current level number, used for calculating ticks to wait between moves for protester
-    //int currentLevelNumber = sp->getLevel(); 
+        //int currentLevelNumber = sp->getLevel();
     StudentWorld* sp = nullptr;
+
 private:
-    bool m_isAlive = true; //alive or dead
-    
+    bool m_isAlive = true; // alive or dead
+};
+
+class Agent : public Actor {
+public:
+    Agent(StudentWorld* sp, int ID, int x, int y, Direction dir,
+        unsigned int hitPoints);
+    virtual bool annoy(unsigned int amount);
+
+    // Pick up a gold nugget.
+    virtual void addGold() = 0;
+    virtual bool canDigThroughIce() const;
+    // How many hit points does this actor have left?
+    unsigned int getHitPoints() const;
+
+    virtual bool canPickThingsUp() const;
+
+private:
+    unsigned int hitPoints = 10;
 };
 
 
 
-class Iceman : public Actor {
+class Iceman : public Agent {
 public:
+
     //contructor declaration
     Iceman(StudentWorld* sp);
     virtual void doSomething();
-    ~Iceman();
-    bool is_Alive()
-    {
-        return m_isAlive;
-    }
-    //virtual StudentWorld* getWorld() const {
-    //    StudentWorld* world = sp;
-    //    return world;
-    //};
 
+    virtual bool annoy(unsigned int amount);
+    virtual bool canDigThroughIce() const;
+    virtual void addGold();
+    // Pick up a sonar kit.
+    void addSonar();
+
+    // Pick up water.
+    void addWater();
+
+    // Get amount of gold
+    unsigned int getGold() const;
+
+    // Get amount of sonar charges
+    unsigned int getSonar() const;
+
+    // Get amount of water
+    unsigned int getWater() const;
+    ~Iceman();
 private:
-    int m_hits = 10;
-    int m_squirts = 5;
-    int m_sonar = 1;
-    int m_nuggets = 0;
+    unsigned int m_hits = 10;
+    unsigned int m_squirts = 5;
+    unsigned int m_sonar = 1;
+    unsigned int m_gold = 0;
     //StudentWorld* sp = nullptr;
-    bool m_isAlive;
+    bool m_isAlive = true;
+
 };
 
 
@@ -66,149 +121,155 @@ public:
 
     //contructor declaration
     Ice(StudentWorld* sp);
+    virtual void doSomething() override;
     ~Ice();
-	virtual void doSomething() override {
-		// Ice does not perform any actions
-	}
 
 private:
     //StudentWorld* sp = nullptr;
+
 };
 
 
 
-//******************************** Protester *******************************
-class Protester : public Actor {
+//******************************** Protestors *******************************
+class Protester : public Agent {
+
 public:
-    // constructor
-    Protester(StudentWorld* sp) : Actor(IID_PROTESTER, 60, 60, left, 1.0, 0) {
-        sp = sp;
-        setVisible(true);
-    }
+    Protester(StudentWorld* sp, int x, int y, int ID,
+        unsigned int hitPoints, unsigned int score);
+    virtual void doSomething();
+    virtual bool annoy(unsigned int amount);
+    virtual void addGold() override;
+    unsigned int getGold() const { return m_gold; } // getter for gold
+    virtual bool huntsIceMan() const;
 
-    virtual void doSomething() {}
+    // Set state to having gien up protest
+    void setMustLeaveOilField();
 
+    // Set number of ticks until next move
+    void setTicksToNextMove();
 
 private:
-    bool alive = true;
-    //StudentWorld* sp = nullptr;
-    //int ticksToWaitBetweenMoves = max(0, (3 - currentLevelNumber / 4));
+    unsigned int m_gold = 0;
+    bool m_state = false; //starts off not giving up protest
 };
+
 
 class RegularProtester : public Protester {
 public:
-    RegularProtester(StudentWorld* sp);
-    virtual void doSomething() override;
-
-	bool is_Alive()
-	{
-		return alive;
-	}
-
-	bool is_LeavingField() {
-		return leave_field;
-	}
+    RegularProtester(StudentWorld* sp, int x, int y, int ID);
+    virtual void doSomething();
 
 private:
-	bool alive = true;
-    //StudentWorld* sp = nullptr;
-    int m_hits = 5;
-	bool leave_field = false; // if true, protester will leave field after being hit
+
 };
 
 class HardcoreProtester : public Protester {
+
 public:
-    HardcoreProtester(StudentWorld* sp);
-    virtual void doSomething() override;
+    HardcoreProtester(StudentWorld* sp, int x, int y, int ID);
+    virtual void doSomething();
 
-	bool is_Alive() {
-		return alive;
-	}
-
-    bool is_LeavingField() {
-        return leave_field;
-    }
 
 private:
-    bool alive = true;
-    //StudentWorld* sp = nullptr;
-    bool leave_field = false;
+
 };
 
 
-//******************************** Objects *******************************
-
-class BarrelsOfOil : public Actor {
+class Boulder : public Actor {
 public:
-	BarrelsOfOil(StudentWorld* sp);
-    virtual void doSomething() override;
+    Boulder(StudentWorld* sp);
+    virtual bool canActorsPassThroughMe() const;
+    virtual void doSomething();
 
-    bool is_Alive() {
-        return alive;
-    }
+private: 
+	bool fallingState = false; // starts off not falling
+};
 
+class Squirt : public Actor
+{
+public:
+    Squirt(StudentWorld* sp, int x, int y, Direction dir);
+    virtual void doSomething();
+};
+
+
+//******************************** Activating Objects *******************************
+
+class ActivatingObject : public Actor
+{
+public:
+    ActivatingObject(StudentWorld* sp, int x, int y, int ID,
+        int soundToPlay, bool activateOnPlayer,
+        bool activateOnProtester, bool initallyActive);
+
+     bool needsToBePickedUpToFinishLevel() const;
+    // Set number of ticks until this object dies
+    bool canActorsPassThroughMe() const;
+    void setTicksToLive();
+	//void playSound() const {
+	//	getWorld()->playSound(m_soundToPlay); // play sound when this object is activated
+	//}
+	virtual void doSomething() = 0;
+	// Getters for member variables
+	bool activateOnPlayer() const { return m_activateOnPlayer; }
+	bool activateOnProtester() const { return m_activateOnProtester; }
+	bool isInitiallyActive() const { return m_initiallyActive; }    
+
+private:
+	//int m_ticksToLive = 0; // number of ticks until this object dies
+	int m_soundToPlay = SOUND_NONE; // sound to play when this object is activated
+	bool m_activateOnPlayer; // true if this object activates on player, false otherwise
+	bool m_activateOnProtester; // true if this object activates on protester, false otherwise
+    bool m_initiallyActive; // true if this object is initially active, false otherwise
+};
+
+class BarrelsOfOil : public ActivatingObject {
+public:
+    BarrelsOfOil(StudentWorld* sp);
+    virtual void doSomething();
+    virtual bool needsToBePickedUpToFinishLevel() const;
     ~BarrelsOfOil();
-
-private:
-    //StudentWorld* sp = nullptr;
-    bool alive = true;
 };
 
-class Boulders : public Actor {
+class GoldNugget : public ActivatingObject { // ghost block
 public:
-	Boulders(StudentWorld* sp);
-    virtual void doSomething() override;
-    bool is_Alive() {
-        return alive;
-    }
-
-    //if boulder falls below ice, it is dead, alive = false
+    GoldNugget(StudentWorld* sp, bool temporary);
+    ~GoldNugget();
+    virtual void doSomething();
+	void setTicksToLive();
 
 private:
-    bool alive = true;
-    //StudentWorld* sp = nullptr;
+    int lifetime; // -1 = not set
+    bool pickup = true; // true for iceman; false for protester
+	bool temporary = false; // true if temporary, false if permanent
 
 };
 
-class GoldNuggets : public Actor {
+
+class SonarKit : public ActivatingObject
+{
 public:
-	GoldNuggets(StudentWorld* sp);
-    virtual void doSomething() override;
-    bool is_Alive() {
-        return alive;
-    }
+    SonarKit(StudentWorld* sp);
+    virtual void doSomething();
+	void setTicksToLive();
 
 private:
-    bool alive = true;
-    //StudentWorld* sp = nullptr;
-
+	int lifetime = -1; // -1 = not set
 };
 
-class WaterRefills : public Actor {
+class WaterPool : public ActivatingObject
+{
 public:
-	WaterRefills(StudentWorld* sp);
-    virtual void doSomething() override;
-    bool is_Alive() {
-        return alive;
-    }
+    WaterPool(StudentWorld* sp);
+    virtual void doSomething();
+    void setTicksToLive();
 
 private:
-    bool alive = true;
-    //StudentWorld* sp = nullptr;
+	int lifetime = -1; // -1 = not set
 };
 
-class Sonar : public Actor {
-public:
-    Sonar(StudentWorld* sp);
-    virtual void doSomething() override;
-    bool is_Alive() {
-        return alive;
-    }
 
-private:
-    bool alive = true;
-    //StudentWorld* sp = nullptr;
-};
 
 #endif // ACTOR_H_
 

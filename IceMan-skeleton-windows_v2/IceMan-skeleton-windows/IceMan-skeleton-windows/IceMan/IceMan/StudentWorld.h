@@ -11,19 +11,21 @@
 // Students:  Add code to this file, StudentWorld.cpp, Actor.h, and Actor.cpp
 
 
-
-
 class StudentWorld : public GameWorld
 {
 public:
     StudentWorld(std::string assetDir); //contructor1
-    
+
     ~StudentWorld() {
         // destructor to clean up memory
-        for (auto& actor : actors) {
-            delete actor; // delete all actors
+        for (auto& agent : agents) {
+            delete agent; // delete all actors
         }
-        actors.clear();
+        agents.clear();
+        for (auto& object : aobj) {
+            delete object; // delete all actors
+        }
+        aobj.clear();
         for (auto& iceObj : iceField) {
             delete iceObj; // delete all ice objects
         }
@@ -31,56 +33,49 @@ public:
         cout << "StudentWorld dtor" << endl;
 
     };
-    
+
     virtual int init();
 
     virtual int move();
-    /*{
-        // This code is here merely to allow the game to build, run, and terminate after you hit enter a few times.
-        // Notice that the return value GWSTATUS_PLAYER_DIED will cause our framework to end the current level.
-        decLives();
-        return GWSTATUS_PLAYER_DIED;
-    }*/
-    
-    virtual void cleanUp();
-
-
-private:
-    std::vector<Actor*> actors;
-	std::vector<Ice*> iceField;
-};
-
-
-/*class StudentWorld : public GameWorld
-{
-public:
-    StudentWorld(std::string assetDir)
-        : GameWorld(assetDir)
-    {
-        
-    }
-
-    virtual int init();
-    virtual int move();
-    {
-        // This code is here merely to allow the game to build, run, and terminate after you hit enter a few times.
-        // Notice that the return value GWSTATUS_PLAYER_DIED will cause our framework to end the current level.
-        decLives();
-        return GWSTATUS_PLAYER_DIED;
-    }
 
     virtual void cleanUp();
-    
-    ~StudentWorld(){
-        
-    }
+
+    void addObj(ActivatingObject* a);
+    void addActor(Actor* a);
+	Iceman* getIceman() const { return iceman; } // getter for iceman
+    void clearIce(int x, int y);
+    bool canActorMoveTo(Actor* a, int x, int y) const;
+    int annoyAllNearbyActors(Actor* annoyer, int points, int radius);
+    void revealAllNearbyObjects(int x, int y, int radius);
+    Iceman* findNearbyIceMan(Actor* a, int radius) const;
+    Agent* findNearbyPickerUpper(Actor* a, int radius) const;
+    //void annoyIceMan();
+    void giveIceManSonar();
+    void giveIceManWater();
+    bool facingTowardIceMan(Actor* a) const;
+    GraphObject::Direction lineOfSightToIceMan(Actor* a) const;
+    bool isNearIceMan(Actor* a, int radius) const;
+    bool NearBoulder(int x, int y, int radius) const;
+    GraphObject::Direction determineFirstMoveToExit(int x, int y);
+    GraphObject::Direction determineFirstMoveToIceMan(int x, int y);
 
     //getter functions
-    virtual const int getCurrentHealth() { return health; };
-    virtual const int getSquirtsLeftInSquirtGun() { return squirtGun; };
-    virtual const int getPlayerGoldCount() { return gold; };
-    virtual const int getNumberOfBarrelsRemainingToBePickedUp() { return barrels; };
-    virtual const int getPlayerSonarChargeCount() { return sonarCharge; };
+    virtual const int getCurrentHealth() { return iceman->getHitPoints(); };
+    virtual const int getSquirtsLeftInSquirtGun() { return iceman->getWater(); };
+    virtual const int getPlayerGoldCount() { return iceman->getGold(); };
+    virtual const int getBarrelsRemaining() {
+		int barrels = 0; // initialize barrels to 0
+
+        for (int i = 0; i < aobj.size(); i++) {
+            if (aobj[i]->getID() == IID_BARREL) {
+                barrels++;
+            }
+        }
+        cout << "# barrels: " << barrels << endl;
+        return barrels; // if no barrels, return 0
+    };
+    virtual const int getPlayerSonarChargeCount() { return iceman->getSonar(); };
+	virtual const int getTicks() const { return ticks; };
 
     //setter functions
     virtual void setDisplayText() {
@@ -89,16 +84,16 @@ public:
         int health = getCurrentHealth();
         int squirts = getSquirtsLeftInSquirtGun();
         int gold = getPlayerGoldCount();
-        int barrelsLeft = getNumberOfBarrelsRemainingToBePickedUp();
+        int barrelsLeft = getBarrelsRemaining();
         int sonar = getPlayerSonarChargeCount();
         int score = getScore();
 
         // Next, create a string from your statistics, of the form:
         // Lvl: 52 Lives : 3 Hlth : 80 % Wtr : 20 Gld : 3 Oil Left : 2 Sonar : 1 Scr : 321000
         std::string s;
-        s = "Lvl: " + (level > 10 ? "" : "_") + std::to_string(level) + "  Lives : "
+        s = "Lvl: " + (string)(level > 10 ? "" : "_") + std::to_string(level) + "  Lives : "
             + std::to_string(lives) + "  Hlth : "
-            + (health > 100 ? "" : "_") + health + "%  Wtr : "
+            + (health > 100 ? "" : "_") + to_string(health) + "%  Wtr : "
             + (squirts > 10 ? "" : "_") + std::to_string(squirts) + "  Gld : "
             + (gold > 10 ? "" : "_") + std::to_string(gold) + "  Oil Left : "
             + (barrelsLeft > 10 ? "" : "_") + std::to_string(barrelsLeft) + "  Sonar : "
@@ -107,16 +102,16 @@ public:
         GameWorld::setGameStatText(s); // in GameWorld.cpp
     }
 
+
 private:
-    int gameLevel;
-    int lives;
-    int health;
-    int squirtGun;
-    int gold;
-    int barrels;
-    int sonarCharge;
-    int score;
+    Iceman* iceman = nullptr;
+    std::vector<Agent*> agents; // Protesters & iceman
+    std::vector<ActivatingObject*> aobj; // for barrels, gold, sonar, waterpools
+    std::vector<Actor*> iceField; // ice, boulders, squirts
+    int ticks = 1; // global variable to keep track of ticks
+    int currentLevelNumber = 1;
+
 };
-*/
+
 
 #endif // STUDENTWORLD_H_
