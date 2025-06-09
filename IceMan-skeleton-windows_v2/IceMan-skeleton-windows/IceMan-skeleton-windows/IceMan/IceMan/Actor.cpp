@@ -6,7 +6,8 @@
 
 //contructor
 Actor::Actor(StudentWorld* sp, int ID, int x, int y, Direction dir, double siz, unsigned int dep, bool visible):
-GraphObject(ID, x, y, dir, siz, dep){
+GraphObject(ID, x, y, dir, siz, dep), sp (sp){
+    sp->setWorld(sp); // set the world pointer
 }
 
 Actor::~Actor() {
@@ -17,17 +18,16 @@ Actor::~Actor() {
     getGraphObjects(getAnimationNumber()).erase(this);
 }
 
+StudentWorld* Actor::getWorld() const{
+    return sp;
+}
 bool Actor::isAlive() const{
     return m_isAlive;
 }
 
+
 void Actor::setDead(){
-    if (sp){
-        if (sp->getLives() == 0){
-            m_isAlive = false;
-            sp->playSound(SOUND_PLAYER_GIVE_UP);
-        }
-    }
+    m_isAlive = false;
 }
 
 bool Actor::annoy(unsigned int amt){
@@ -53,11 +53,12 @@ bool Actor::canPickThingsUp() const{
 bool Actor::needsToBePickedUpToFinishLevel() const{
     return false;
 }
-
-bool Actor::moveToIfPossible(int x, int y){
-    return true;
+bool Actor::moveToIfPossible(int x, int y) {
+    if (getWorld()->canActorMoveTo(this, x, y)) {
+        return true; // cannot move to the specified location
+    }
+    return false;
 }
-
 
 
 
@@ -68,7 +69,7 @@ Agent::Agent(StudentWorld* sp, int ID, int x, int y, Direction dir,
 }
 
 bool Agent::annoy(unsigned int amount){
-    hitPoints--;
+    hitPoints -= amount;
     if (hitPoints == 0){
         setDead();
         return false;
@@ -93,17 +94,28 @@ unsigned int Agent::getHitPoints() const{
 Iceman::Iceman(StudentWorld* sp): Agent(sp, IID_PLAYER, 30, 60, right, 5){ //contructor
     getGraphObjects(0).insert(this);
     setVisible(true);
+    sp->setIceman(this);
+    cout << "iceman ctor" << endl;
+}
+
+void Iceman::setDead(){
+    if (sp){
+        if (sp->getLives() == 0){
+            m_isAlive = false;
+            sp->playSound(SOUND_PLAYER_GIVE_UP);
+        }
+    }
 }
 
 
 void Iceman::doSomething(){
-    Direction d = this->getDirection();
-    int key;
     if (getWorld(sp) == nullptr) {
             cerr << "Error: StudentWorld pointer is null!" << endl;
             return; // handle the error as needed
         }
     
+    Direction d = this->getDirection();
+    int key;
     if (getWorld(sp)->getKey(key) == true) {
         switch (key) {
             case KEY_PRESS_LEFT:
@@ -148,6 +160,7 @@ void Iceman::doSomething(){
                     m_gold--;
                     GoldNugget* g = new GoldNugget(sp, getX(), getY(), true);
                     g->doSomething();
+                    
                 }
                 break;
             case KEY_PRESS_SPACE:
@@ -219,11 +232,13 @@ void Iceman::addGold(){
 
 
 void Iceman::addSonar(){
+    sp->increaseScore(75);
     m_sonar+=1;
 }
 
   // Pick up water.
 void Iceman::addWater(){
+    sp->increaseScore(100);
     m_squirts+=5;
 }
 
@@ -277,6 +292,7 @@ void Protester::setMustLeaveOilField(){
   // Set number of ticks until next move
 void Protester::setTicksToNextMove(){
    // sp->ticks = 0;
+    //int ticks = getWorld()->getTicks();
 }
 
 Protester::~Protester(){
@@ -357,8 +373,36 @@ bool Boulder::canActorsPassThroughMe() const{
 }
 
 void Boulder::doSomething(){
-    
+    // if there is not ice below the boulder in 2x2 square, it can fall ie.
+    if (getWorld()->canActorMoveTo(this, getX(), getY() - 1) &&
+        getWorld()->canActorMoveTo(this, getX() + 1, getY() - 1) &&
+        getWorld()->canActorMoveTo(this, getX() + 2, getY() - 1) &&
+        getWorld()->canActorMoveTo(this, getX() + 3, getY() - 1)) {
+        // if boulder can fall, then it will fall after 30 ticks
+        if (getWorld()->getTicks() % 30 == 0) {
+            fallingState = true;
+            getWorld()->playSound(SOUND_FALLING_ROCK);
+        }
+        else {
+            // if boulder cannot fall, then it will not do anything
+            return;
+            
+            
+        }
+        
+        
+    }
+    if (fallingState == true) {
+        if (getWorld()->canActorMoveTo(this, getX(), getY() - 1)) {
+            moveTo(getX(), getY() - 1);
+            getWorld()->annoyAllNearbyActors(this, 100, 3); // annoy all nearby actors
+        }
+        else if (getY() == -1) {
+            setDead();
+        }
+    }
 }
+
 
 Boulder::~Boulder(){
     setVisible(false);
@@ -418,15 +462,23 @@ BarrelsOfOil::BarrelsOfOil(StudentWorld* sp): ActivatingObject(sp, (rand() % 64)
 }
 
 void BarrelsOfOil::doSomething(){
-    if (isAlive()){
-        //if()
+    if (isAlive()) {
+        if (isVisible() == false && getWorld()->findNearbyIceMan(this, 4)) { // if not visible and iceman is in radius 4
+            setVisible(true); // make visible
+            return;
+        }
+        if (getWorld()->findNearbyIceMan(this, 3)) {
+            this->setDead(); // if iceman is in radius 3, set dead
+            getWorld()->playSound(SOUND_FOUND_OIL); // play sound
+            getWorld()->increaseScore(1000); // increase score by 10
+            return;
+        }
     }
-    else{
+    else
         return;
-    }
 }
 
-bool BarrelsOfOil::needsToBePickedUpToFinishLevel() const{
+bool BarrelsOfOil::needsToBePickedUpToFinishLevel() const {
     return true;
 }
 
@@ -437,11 +489,40 @@ BarrelsOfOil::~BarrelsOfOil() {
 
 //******************************** Gold Nuggets Methods *******************************
 GoldNugget::GoldNugget(StudentWorld* sp, int x, int y, bool temporary): ActivatingObject(sp, x, y, IID_GOLD, SOUND_GOT_GOODIE, true, true, true){
-    setVisible(true);
+    //setVisible(true);
 }
 void GoldNugget::doSomething(){
-    sp->addActor(this);
-}
+    if (isAlive() == false) {
+            return; // if not alive, do nothing
+        }
+        
+        if (isVisible() == false && (getWorld()->findNearbyPickerUpper(this, 4))->getID() == IID_PLAYER) { // if not visible and iceman is in radius 4
+            setVisible(true); // make visible
+            return;
+        }
+        auto* a = getWorld()->findNearbyPickerUpper(this, 3); // find nearby protester or iceman
+        if (a->getID() == IID_PLAYER && pickup == true) {
+            this->setDead(); // if iceman is in radius 3, set dead
+            getWorld()->playSound(SOUND_GOT_GOODIE); // play sound
+            a->addGold(); // add gold to iceman inventory
+            getWorld()->increaseScore(10); // increase score by 10
+            pickup = false; // set pickup to false
+            return;
+        }
+        
+        else if ((a->getID() == IID_PROTESTER || a->getID() == IID_HARD_CORE_PROTESTER) && pickup == false) {
+            a->addGold(); // add gold to protester inventory
+            this->setDead(); // if protester is in radius 3, set dead
+            getWorld()->playSound(SOUND_PROTESTER_FOUND_GOLD); // play sound
+            getWorld()->increaseScore(25); // increase score by 25
+            return;
+        }
+        if (temporary == true) {
+            // if temporary, set dead after 100 ticks
+            if (getWorld()->getTicks() % 100 == 0) {
+                setDead();
+            }
+        }}
 
 GoldNugget::~GoldNugget(){
     setVisible(false);
