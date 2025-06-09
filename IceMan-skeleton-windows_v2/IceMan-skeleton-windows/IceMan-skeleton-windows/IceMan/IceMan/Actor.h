@@ -65,7 +65,7 @@ public:
     Agent(StudentWorld* sp, int ID, int x, int y, Direction dir,
         unsigned int hitPoints);
     virtual bool annoy(unsigned int amount);
-
+    //void setDead() { m_isAlive = false; }
     // Pick up a gold nugget.
     virtual void addGold() = 0;
     virtual bool canDigThroughIce() const;
@@ -76,6 +76,7 @@ public:
 
 private:
     unsigned int hitPoints = 10;
+    bool m_isAlive;
 };
 
 
@@ -88,6 +89,7 @@ public:
     virtual void doSomething();
 
     virtual bool annoy(unsigned int amount);
+    void setDead();
     virtual bool canDigThroughIce() const;
     virtual void addGold();
     // Pick up a sonar kit.
@@ -234,14 +236,13 @@ public:
 
 class GoldNugget : public ActivatingObject { // ghost block
 public:
-    GoldNugget(StudentWorld* sp, bool temporary);
+    GoldNugget(StudentWorld* sp, int x, int y, bool temporary);
     ~GoldNugget();
     virtual void doSomething();
 	void setTicksToLive();
 
 private:
     int lifetime; // -1 = not set
-    bool pickup = true; // true for iceman; false for protester
 	bool temporary = false; // true if temporary, false if permanent
 
 };

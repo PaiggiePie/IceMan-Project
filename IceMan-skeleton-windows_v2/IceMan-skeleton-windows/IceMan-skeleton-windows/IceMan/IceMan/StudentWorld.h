@@ -60,18 +60,19 @@ public:
     GraphObject::Direction determineFirstMoveToIceMan(int x, int y);
 
     //getter functions
-    virtual const int getCurrentHealth() { return iceman->getHitPoints(); };
+    virtual const int getCurrentHealth() {
+        int hitp = iceman->getHitPoints();
+        hitp = (hitp / 10) * 100;
+        return hitp;
+    };
     virtual const int getSquirtsLeftInSquirtGun() { return iceman->getWater(); };
     virtual const int getPlayerGoldCount() { return iceman->getGold(); };
     virtual const int getBarrelsRemaining() {
 		int barrels = 0; // initialize barrels to 0
-
         for (int i = 0; i < aobj.size(); i++) {
-            if (aobj[i]->getID() == IID_BARREL) {
+            if (aobj[i]->getID() == IID_BARREL) 
                 barrels++;
-            }
         }
-        cout << "# barrels: " << barrels << endl;
         return barrels; // if no barrels, return 0
     };
     virtual const int getPlayerSonarChargeCount() { return iceman->getSonar(); };
@@ -93,7 +94,7 @@ public:
         std::string s;
         s = "Lvl: " + (string)(level > 10 ? "" : "_") + std::to_string(level) + "  Lives : "
             + std::to_string(lives) + "  Hlth : "
-            + (health > 100 ? "" : "_") + to_string(health) + "%  Wtr : "
+            + (health == 100 ? "" : "_") + to_string(health) + "%  Wtr : "
             + (squirts > 10 ? "" : "_") + std::to_string(squirts) + "  Gld : "
             + (gold > 10 ? "" : "_") + std::to_string(gold) + "  Oil Left : "
             + (barrelsLeft > 10 ? "" : "_") + std::to_string(barrelsLeft) + "  Sonar : "

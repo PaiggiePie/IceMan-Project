@@ -29,7 +29,7 @@ void Actor::setWorld(StudentWorld*& sp) const {
 int StudentWorld::init() {
 	// make iceman
 	this->iceman = new Iceman(sw);
-	iceman->setWorld(sw);
+	//iceman->setWorld(sw);
 	if (getIceman() == nullptr)
 		cout << "null" << endl;
 	agents.push_back(iceman); // add iceman to agents vector
@@ -51,12 +51,22 @@ int StudentWorld::init() {
 
 		}
 	}
-	
+
+	for (auto& iceObj : iceField) {
+		iceObj->setVisible(true);
+	}
+
 	// make static objects
-	BarrelsOfOil* barrel = new BarrelsOfOil(this);
-	aobj.push_back(barrel);
-	/*GoldNugget* nugget = new GoldNugget(sw, false);
-	aobj.push_back(nugget);*/
+	int B = min(currentLevelNumber / 2 + 2, 9);
+	for (int i = 0; i < B; i++) {
+		BarrelsOfOil* barrel = new BarrelsOfOil(this);
+		aobj.push_back(barrel);
+	}
+	int G = max(5 - currentLevelNumber / 2, 2);
+	for (int i = 0; i < G; i++) {
+		GoldNugget* nugget = new GoldNugget(sw, (std::rand() % 59), (std::rand() % 59), false);
+		aobj.push_back(nugget);
+	}
 	/*
 	Boulder* boulder = new Boulder(this);
 	iceField.push_back(boulder);*/
@@ -83,7 +93,7 @@ int StudentWorld::move() {
 	int probabilityOfHardcore = min(90, currentLevelNumber * 10 + 30);
 	currentLevelNumber = getLevel(); // get the current level number
 	int ticksToWaitBetweenMoves = max(0, (3 - currentLevelNumber / 4));
-	if ((ticks - ticksToWaitBetweenMoves) %2 == 0) {
+	if ((ticks - ticksToWaitBetweenMoves) % 2 == 0) {
 		canAddP = true;
 	}
 	if (canAddP == true) {
@@ -91,41 +101,60 @@ int StudentWorld::move() {
 		// use probability of protester spawning
 		// canAddP = false; // reset 
 	}
+	int random = (rand() % G);
+	if (G == random) {
+		int random2 = (rand() % 1);
+		if (random2 == 1) {
+			WaterPool* pool = new WaterPool(this);
+			aobj.push_back(pool);
+		}
+		else {
+			SonarKit* kit = new SonarKit(this);
+			aobj.push_back(kit);
+		}
+	}
 	//if(iceman->isAlive())
 	//	iceman->doSomething(); // ask iceman to do something
 	
 	// Give each Actor a chance to do something
-	int agenti = 0;
+	int index = 0;
 	for (auto& agent : agents) {
 		if (agent->isAlive()) {
 			agent->doSomething();
 			if (agent->isAlive() == false) {
 				cout << "agent died" << endl;
-				agents.erase(agents.begin() + agenti); // remove dead agent from vector
+				delete agent;
+				agents.erase(agents.begin() + index); // remove dead agent from vector
 			}
 		}
 		else {
-			delete agent; // delete dead protesters
+			 // delete dead protesters
 		}
-		agenti++;
+		index++;
 	}
-	int aobji = 0; // index for aobj vector
+	index = 0; // index for aobj vector
 	for (auto& object : aobj) {
 		if (object->isAlive() && object) {
 			object->doSomething();
 			 // increment index for next object
 			if (object->isAlive() == false) {
-				cout << "died" << endl; 
-				cout << aobj.size() << endl;
-				aobj.erase((aobj.begin() + aobji));
-				cout << aobj.size() << endl;
-				delete object;
+				cout << "obj died" << endl; 
+				aobj.erase((aobj.begin() + index));
+				//delete object;
+				index--;
 			}
 		}
-		aobji++;
+		index++;
 	}
-	for (auto& ice : iceField)
-		ice->doSomething(); 
+	index = 0;
+	for (auto& ice : iceField) {
+		ice->doSomething();
+		if (!ice->isAlive()) {
+			//delete ice;
+			//aobj.erase((aobj.begin() + index));
+			//index--;
+		}
+	}
 
 	//   int T = std::max(25, (200 - ((int) getLevel()))); // # of tick to wait for new protester
 	   //int P = std::min(15.0, (2 + ((int) getLevel()) * 1.5)); // # of Protesters that should be on field
@@ -176,12 +205,10 @@ void StudentWorld::cleanUp() {
 
 void StudentWorld::addObj(ActivatingObject* a) {
 	aobj.push_back(a);
-	a->doSomething();
 }
 
 void StudentWorld::addActor(Actor* a) {
 	iceField.push_back(a);
-	a->doSomething();
 }
 
 void StudentWorld::clearIce(int x, int y) {
@@ -193,7 +220,7 @@ void StudentWorld::clearIce(int x, int y) {
 				(iceObj->getY() == y ||
 				iceObj->getY() == y + 1 ||
 				iceObj->getY() == y + 2 ||
-				iceObj->getY() == y + 3) && iceObj->isVisible()) {
+				iceObj->getY() == y + 3)) {
 			iceObj->setVisible(false);
 			if (ticks % 10 == 0)
 				playSound(SOUND_DIG);
@@ -201,6 +228,7 @@ void StudentWorld::clearIce(int x, int y) {
 		}
 	}
 }
+
 
 bool StudentWorld::canActorMoveTo(Actor* a, int x, int y) const {
 	if (x < 0 || x >= 64 || y < 0 || y >= 60) {
