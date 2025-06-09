@@ -211,8 +211,18 @@ public:
     bool canActorsPassThroughMe() const;
     void setTicksToLive();
     virtual ~ActivatingObject();
+    virtual void doSomething() = 0;
+    
+    bool activateOnPlayer() const { return m_activateOnPlayer; }
+    bool activateOnProtester() const { return m_activateOnProtester; }
+    bool isInitiallyActive() const { return m_initiallyActive; }
 private:
     int ticksToLive;
+    //int m_ticksToLive = 0; // number of ticks until this object dies
+    int m_soundToPlay = SOUND_NONE; // sound to play when this object is activated
+    bool m_activateOnPlayer; // true if this object activates on player, false otherwise
+    bool m_activateOnProtester; // true if this object activates on protester, false otherwise
+    bool m_initiallyActive; // true if this object is initially active, false otherwise
 };
 
 class BarrelsOfOil: public ActivatingObject{
@@ -228,10 +238,22 @@ public:
     GoldNugget(StudentWorld* sp, int x, int y, bool temporary);
     virtual void doSomething();
     virtual ~GoldNugget();
+    void setTicksToLive();
 private:
-    bool pickup = true; // true for iceman; false for protester
+    int lifetime; // -1 = not set
     bool temporary = false; // true if temporary, false if permanent
 
+};
+
+
+class WaterPool : public ActivatingObject
+{
+public:
+    WaterPool(StudentWorld* sp);
+    virtual void doSomething();
+    virtual ~WaterPool();
+private:
+    int lifetime = -1; // -1 = not set
 };
 
 
@@ -240,18 +262,11 @@ class SonarKit : public ActivatingObject
 public:
     SonarKit(StudentWorld* sp);
     virtual void doSomething();
+    void setTicksToLive();
     virtual ~SonarKit();
+private:
+    int lifetime = -1; // -1 = not set
 };
-
-class WaterPool : public ActivatingObject
-{
-public:
-    WaterPool(StudentWorld* sp);
-    virtual void doSomething();
-    virtual ~WaterPool();
-};
-
-
 
 #endif // ACTOR_H_
 
