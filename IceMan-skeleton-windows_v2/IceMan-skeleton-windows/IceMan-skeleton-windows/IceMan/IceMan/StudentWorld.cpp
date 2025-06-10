@@ -52,10 +52,6 @@ int StudentWorld::init() {
 		}
 	}
 
-	for (auto& iceObj : iceField) {
-		iceObj->setVisible(true);
-	}
-
 	// make static objects
 	int B = min(currentLevelNumber / 2 + 2, 9);
 	for (int i = 0; i < B; i++) {
@@ -81,11 +77,11 @@ int StudentWorld::move() {
 		int X = aobj[0]->getX();
 		int Y = aobj[0]->getY();
 		cout << X << ", " << Y << endl;
-	}*/
+	}
 	cout << "Score: " << getScore() << endl;
 	cout << "Level: " << getLevel() << endl;
 
-	cout << "tick: " << ticks << endl;
+	cout << "tick: " << ticks << endl;*/
 
 	setDisplayText();
 	bool canAddP = false;
@@ -101,9 +97,9 @@ int StudentWorld::move() {
 		// use probability of protester spawning
 		// canAddP = false; // reset 
 	}
-	int random = (rand() % G);
+	int random = (rand() % (G + 1)); // changed to (G + 1)
 	if (G == random) {
-		int random2 = (rand() % 1);
+		int random2 = (rand() % 2);
 		if (random2 == 1) {
 			WaterPool* pool = new WaterPool(this);
 			aobj.push_back(pool);
@@ -115,46 +111,19 @@ int StudentWorld::move() {
 	}
 	//if(iceman->isAlive())
 	//	iceman->doSomething(); // ask iceman to do something
-	
+
 	// Give each Actor a chance to do something
-	int index = 0;
+
 	for (auto& agent : agents) {
-		if (agent->isAlive()) {
-			agent->doSomething();
-			if (agent->isAlive() == false) {
-				cout << "agent died" << endl;
-				delete agent;
-				agents.erase(agents.begin() + index); // remove dead agent from vector
-			}
-		}
-		else {
-			 // delete dead protesters
-		}
-		index++;
+		agent->doSomething();
 	}
-	index = 0; // index for aobj vector
 	for (auto& object : aobj) {
-		if (object->isAlive() && object) {
-			object->doSomething();
-			 // increment index for next object
-			if (object->isAlive() == false) {
-				cout << "obj died" << endl; 
-				aobj.erase((aobj.begin() + index));
-				//delete object;
-				index--;
-			}
-		}
-		index++;
+		object->doSomething();
 	}
-	index = 0;
 	for (auto& ice : iceField) {
 		ice->doSomething();
-		if (!ice->isAlive()) {
-			//delete ice;
-			//aobj.erase((aobj.begin() + index));
-			//index--;
-		}
 	}
+
 
 	//   int T = std::max(25, (200 - ((int) getLevel()))); // # of tick to wait for new protester
 	   //int P = std::min(15.0, (2 + ((int) getLevel()) * 1.5)); // # of Protesters that should be on field
@@ -177,6 +146,37 @@ int StudentWorld::move() {
 		playSound(SOUND_FINISHED_LEVEL);
 		currentLevelNumber++;
 		return GWSTATUS_FINISHED_LEVEL;
+	}
+
+	// delete all objects
+	int index = 0;
+	for (auto& agent : agents) {
+		if (agent->isAlive() == false) {
+			cout << "agent died" << endl;
+			delete agent;
+			agents.erase(agents.begin() + index); // remove dead agent from vector
+			index--;
+		}
+		index++;
+	}
+	index = 0;
+	for (auto& object : aobj) {
+		if (object->isAlive() == false) {
+			cout << "obj died" << endl;
+			delete object;
+			aobj.erase((aobj.begin() + index));
+			index--;
+		}
+		index++;
+	}
+	index = 0;
+	for (auto& ice : iceField) {
+		if (ice->isAlive() == false) {
+			delete ice;
+			iceField.erase((iceField.begin() + index));
+			index--;
+		}
+		index++;
 	}
 
 	ticks++; // increment ticks for each move
@@ -213,18 +213,22 @@ void StudentWorld::addActor(Actor* a) {
 
 void StudentWorld::clearIce(int x, int y) {
 	for (auto& iceObj : iceField) {
-		if ((iceObj->getX() == x ||
-				iceObj->getX() == x + 1 ||
-				iceObj->getX() == x + 2 ||
-				iceObj->getX() == x + 3) &&
-				(iceObj->getY() == y ||
-				iceObj->getY() == y + 1 ||
-				iceObj->getY() == y + 2 ||
-				iceObj->getY() == y + 3)) {
-			iceObj->setVisible(false);
-			if (ticks % 10 == 0)
-				playSound(SOUND_DIG);
-			iceObj->setDead();
+		if (iceObj->getID() == IID_ICE) {
+			if (((iceObj->getX() == x) ||
+				(iceObj->getX() == x + 1) ||
+				(iceObj->getX() == x + 2) ||
+				(iceObj->getX() == x + 3)) &&
+				((iceObj->getY() == y) ||
+					(iceObj->getY() == y + 1) ||
+					(iceObj->getY() == y + 2) ||
+					(iceObj->getY() == y + 3))
+				&& iceObj->isVisible()) {
+				iceObj->setVisible(false);
+				/*if (ticks % 15 == 0)
+					playSound(SOUND_DIG);*/
+					//iceObj->setDead();
+				cout << "clear ice" << endl;
+			}
 		}
 	}
 }
@@ -235,15 +239,10 @@ bool StudentWorld::canActorMoveTo(Actor* a, int x, int y) const {
 		return false; // out of bounds
 	}
 	for (auto& ice : iceField) {
-		if (ice->getX() == x && ice->getY() == y) {
+		if (ice->getX() == x && ice->getY() == y && ice->isVisible()) {
 			return false; // ice blocks and boulders
 		}
 	}
-	//for (auto& actor : aobj) { // for barrels, gold, sonar, waterpools
-	//	if (actor->getX() == x && actor->getY() == y) {
-	//		return false; // another actor is in the way
-	//	}
-	//}
 	return true;
 }
 
@@ -266,6 +265,11 @@ void StudentWorld::revealAllNearbyObjects(int x, int y, int radius) {
 	for (auto& actor : aobj) {
 		if (isNearIceMan(actor, radius)) {
 			actor->setVisible(true); // reveal the actor
+		}
+		for (auto& ice : iceField) {
+			if (isNearIceMan(ice, radius)) {
+				ice->setVisible(true); // reveal the ice
+			}
 		}
 	}
 }
@@ -311,7 +315,7 @@ void StudentWorld::giveIceManWater() {
 
 // Is the Actor a facing toward the IceMan?
 bool StudentWorld::facingTowardIceMan(Actor* a) const {
-	if (a->getX() == iceman->getX() ) { // same x level && right side of iceman
+	if (a->getX() == iceman->getX()) { // same x level && right side of iceman
 		if (a->getDirection() == GraphObject::Direction::left && a->getX() > iceman->getX())
 			return true; // actor is facing left towards iceman
 		else if (a->getDirection() == GraphObject::Direction::right && a->getX() < iceman->getX()) {
@@ -339,7 +343,7 @@ GraphObject::Direction StudentWorld::lineOfSightToIceMan(Actor* a) const {
 	if (a->getX() == iceman->getX()) { // same x level as iceman
 		for (int i = a->getX(); i < iceman->getX(); i++) { //starting at actor, ending at iceman
 			for (int h = 0; h < iceField.size(); h++) {// i = x coords  getY = y coords
-				if (iceField[h]->getY() == a->getY()) {
+				if (iceField[h]->getY() == a->getY() && iceField[h]->isVisible()) {
 					if (iceField[h]->getX() == i) {
 						blocked = true;
 					}
@@ -362,7 +366,7 @@ GraphObject::Direction StudentWorld::lineOfSightToIceMan(Actor* a) const {
 	else if (a->getY() == iceman->getY()) {
 		for (int i = a->getY(); i < iceman->getY(); i++) { //loop through each coord between iceman and actor
 			for (int t = 0; t < iceField.size(); t++) {// getX = x coords  i = y coords
-				if (iceField[t]->getX() == a->getX()) { // if there is not an object in the path
+				if (iceField[t]->getX() == a->getX() && iceField[t]->isVisible()) { // if there is not an object in the path
 					if (iceField[t]->getY() == i)
 						blocked = true;
 
@@ -390,9 +394,11 @@ bool StudentWorld::isNearIceMan(Actor* a, int radius) const {
 
 bool StudentWorld::NearBoulder(int x, int y, int radius) const {
 	for (int i = 0; i < iceField.size(); i++) {
-		if (iceField[i]->getID() == IID_BOULDER) { // if there is a boulder in the iceField
-			if (radius > abs((x - iceField[i]->getX())) && radius > abs((y - iceField[i]->getY())))
-				return true; // if boulder is in radius, return true
+		if (iceField[i] != nullptr) {
+			if (iceField[i]->getID() == IID_BOULDER) { // if there is a boulder in the iceField
+				if (radius > std::abs((x - iceField[i]->getX())) && radius > std::abs((y - iceField[i]->getY())))
+					return true; // if boulder is in radius, return true
+			}
 		}
 	}
 	return false;
@@ -402,6 +408,7 @@ bool StudentWorld::NearBoulder(int x, int y, int radius) const {
 GraphObject::Direction StudentWorld::determineFirstMoveToExit(int x, int y) {
 	return GraphObject::Direction::none; // placeholder, implement logic to determine first move to exit
 }
+
 GraphObject::Direction StudentWorld::determineFirstMoveToIceMan(int x, int y) {
 	return GraphObject::Direction::none; // placeholder, implement logic to determine first move to exit
 
@@ -424,7 +431,7 @@ int StudentWorld::move()
 {
 // Update the Game Status Line
 updateDisplayText(); // update the score/lives/level text at screen top
-// The term “Actors” refers to all Protesters, the player, Goodies,
+// The term Actors refers to all Protesters, the player, Goodies,
 // Boulders, Barrels of oil, Holes, Squirts, the Exit, etc.
 // Give each Actor a chance to do something
 for each of the actors in the game world
@@ -453,7 +460,7 @@ if (theplayerCompletedTheCurrentLevel() == true)
 playFinishedLevelSound();
 return GWSTATUS_FINISHED_LEVEL;
 }
-// the player hasn’t completed the current level and hasn’t died
+// the player hasnt completed the current level and hasnt died
 // let them continue playing the current level
 return GWSTATUS_CONTINUE_GAME;
 }

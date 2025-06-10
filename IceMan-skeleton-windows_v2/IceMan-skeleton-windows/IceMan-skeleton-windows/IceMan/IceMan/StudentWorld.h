@@ -42,7 +42,7 @@ public:
 
     void addObj(ActivatingObject* a);
     void addActor(Actor* a);
-	Iceman* getIceman() const { return iceman; } // getter for iceman
+    Iceman* getIceman() const { return iceman; } // getter for iceman
     void clearIce(int x, int y);
     bool canActorMoveTo(Actor* a, int x, int y) const;
     int annoyAllNearbyActors(Actor* annoyer, int points, int radius);
@@ -68,15 +68,15 @@ public:
     virtual const int getSquirtsLeftInSquirtGun() { return iceman->getWater(); };
     virtual const int getPlayerGoldCount() { return iceman->getGold(); };
     virtual const int getBarrelsRemaining() {
-		int barrels = 0; // initialize barrels to 0
+        int barrels = 0; // initialize barrels to 0
         for (int i = 0; i < aobj.size(); i++) {
-            if (aobj[i]->getID() == IID_BARREL) 
+            if (aobj[i]->getID() == IID_BARREL)
                 barrels++;
         }
         return barrels; // if no barrels, return 0
     };
     virtual const int getPlayerSonarChargeCount() { return iceman->getSonar(); };
-	virtual const int getTicks() const { return ticks; };
+    virtual const int getTicks() const { return ticks; };
 
     //setter functions
     virtual void setDisplayText() {
@@ -92,13 +92,13 @@ public:
         // Next, create a string from your statistics, of the form:
         // Lvl: 52 Lives : 3 Hlth : 80 % Wtr : 20 Gld : 3 Oil Left : 2 Sonar : 1 Scr : 321000
         std::string s;
-        s = "Lvl: " + (string)(level > 10 ? "" : "_") + std::to_string(level) + "  Lives : "
+        s = "Lvl: " + (string)(level >= 10 ? "" : "_") + std::to_string(level) + "  Lives : "
             + std::to_string(lives) + "  Hlth : "
             + (health == 100 ? "" : "_") + to_string(health) + "%  Wtr : "
-            + (squirts > 10 ? "" : "_") + std::to_string(squirts) + "  Gld : "
-            + (gold > 10 ? "" : "_") + std::to_string(gold) + "  Oil Left : "
-            + (barrelsLeft > 10 ? "" : "_") + std::to_string(barrelsLeft) + "  Sonar : "
-            + (sonar > 10 ? "" : "_") + std::to_string(sonar) + "  Scr : "
+            + (squirts >= 10 ? "" : "_") + std::to_string(squirts) + "  Gld : "
+            + (gold >= 10 ? "" : "_") + std::to_string(gold) + "  Oil Left : "
+            + (barrelsLeft >= 10 ? "" : "_") + std::to_string(barrelsLeft) + "  Sonar : "
+            + (sonar >= 10 ? "" : "_") + std::to_string(sonar) + "  Scr : "
             + std::string(6 - std::to_string(score).length(), '0') + std::to_string(score);
         GameWorld::setGameStatText(s); // in GameWorld.cpp
     }

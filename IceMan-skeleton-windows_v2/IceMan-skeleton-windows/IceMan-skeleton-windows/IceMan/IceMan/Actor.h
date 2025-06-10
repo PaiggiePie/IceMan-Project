@@ -24,7 +24,7 @@ public:
     // getWorld function to return the StudentWorld pointer
     virtual void setWorld(StudentWorld*& sp) const;
     // Get this actor's world
-    StudentWorld* getWorld() const {  return sp; };
+    StudentWorld* getWorld() const { return sp; };
 
     // Mark this actor as dead.
     void setDead();
@@ -126,10 +126,8 @@ public:
     virtual void doSomething() override;
     ~Ice();
 
-private:
-    //StudentWorld* sp = nullptr;
-
 };
+
 
 
 
@@ -184,8 +182,8 @@ public:
     virtual bool canActorsPassThroughMe() const;
     virtual void doSomething();
 
-private: 
-	bool fallingState = false; // starts off not falling
+private:
+    bool fallingState = false; // starts off not falling
 };
 
 class Squirt : public Actor
@@ -204,25 +202,25 @@ public:
     ActivatingObject(StudentWorld* sp, int x, int y, int ID,
         int soundToPlay, bool activateOnPlayer,
         bool activateOnProtester, bool initallyActive);
-
-     bool needsToBePickedUpToFinishLevel() const;
+    ~ActivatingObject();
+    bool needsToBePickedUpToFinishLevel() const;
     // Set number of ticks until this object dies
     bool canActorsPassThroughMe() const;
     void setTicksToLive();
-	//void playSound() const {
-	//	getWorld()->playSound(m_soundToPlay); // play sound when this object is activated
-	//}
-	virtual void doSomething() = 0;
-	// Getters for member variables
-	bool activateOnPlayer() const { return m_activateOnPlayer; }
-	bool activateOnProtester() const { return m_activateOnProtester; }
-	bool isInitiallyActive() const { return m_initiallyActive; }    
+    //void playSound() const {
+    //	getWorld()->playSound(m_soundToPlay); // play sound when this object is activated
+    //}
+    virtual void doSomething() = 0;
+    // Getters for member variables
+    bool activateOnPlayer() const { return m_activateOnPlayer; }
+    bool activateOnProtester() const { return m_activateOnProtester; }
+    bool isInitiallyActive() const { return m_initiallyActive; }
 
 private:
-	//int m_ticksToLive = 0; // number of ticks until this object dies
-	int m_soundToPlay = SOUND_NONE; // sound to play when this object is activated
-	bool m_activateOnPlayer; // true if this object activates on player, false otherwise
-	bool m_activateOnProtester; // true if this object activates on protester, false otherwise
+    int ticksToLive = 0; // number of ticks until this object dies
+    int m_soundToPlay = SOUND_NONE; // sound to play when this object is activated
+    bool m_activateOnPlayer; // true if this object activates on player, false otherwise
+    bool m_activateOnProtester; // true if this object activates on protester, false otherwise
     bool m_initiallyActive; // true if this object is initially active, false otherwise
 };
 
@@ -239,11 +237,11 @@ public:
     GoldNugget(StudentWorld* sp, int x, int y, bool temporary);
     ~GoldNugget();
     virtual void doSomething();
-	void setTicksToLive();
+    void setTicksToLive();
 
 private:
-    int lifetime; // -1 = not set
-	bool temporary = false; // true if temporary, false if permanent
+    int lifetime = -1; // -1 = not set
+    bool temporary = false; // true if temporary, false if permanent
 
 };
 
@@ -252,25 +250,26 @@ class SonarKit : public ActivatingObject
 {
 public:
     SonarKit(StudentWorld* sp);
+    ~SonarKit();
     virtual void doSomething();
-	void setTicksToLive();
+    void setTicksToLive();
 
 private:
-	int lifetime = -1; // -1 = not set
+    int lifetime = -1; // -1 = not set
 };
 
 class WaterPool : public ActivatingObject
 {
 public:
     WaterPool(StudentWorld* sp);
+    ~WaterPool();
     virtual void doSomething();
     void setTicksToLive();
 
 private:
-	int lifetime = -1; // -1 = not set
+    int lifetime = -1; // -1 = not set
 };
 
 
 
 #endif // ACTOR_H_
-
