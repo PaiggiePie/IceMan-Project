@@ -439,15 +439,130 @@ bool StudentWorld::nearBoulder(int x, int y, int radius) const {
 
   // Determine the direction of the first move a quitting protester
   // makes to leave the oil field.
-GraphObject::Direction determineFirstMoveToExit(int x, int y){
+GraphObject::Direction StudentWorld::determineFirstMoveToExit(int x, int y){
+    const int goalX = 60;
+    const int goalY = 60;
+    
+    std::queue<TreeNode*> q;
+    bool visited[64][64] = {false};
+    
+    // Root node: the protester's current location
+    TreeNode* root = new TreeNode(x, y, GraphObject::none);
+    //root to track exit
+    TreeNode* exitNode = nullptr;
+    visited[x][y] = true;
+    q.push(root);
+    
+    // stores 4 directions
+   vector<tuple<int, int, GraphObject::Direction>> directions = {  {0, 1, GraphObject::up   },
+                                                                   {0, -1, GraphObject::down},
+                                                                   {-1, 0, GraphObject::left},
+                                                                   {1, 0, GraphObject::right} };
+    while (!q.empty()) {
+        //root to track current/nodes in the queue
+        TreeNode* curr = q.front();
+        q.pop();
+        
+        int cX = curr->x;
+        int cY = curr->y;
+        
+        //at exit
+        if (cX == goalX && cY == goalY) {
+            exitNode = curr;
+            break;
+        }
+        
+        //check if valid for each direction for current place
+        for (auto [dX, dY, dir] : directions) {
+            int nextX = cX + dX;
+            int nextY = cY + dY;
+            
+            if (canActorMoveTo(iceman, nextX, nextY) && !visited[nextX][nextY]) {
+                //if valid put on queue
+                visited[nextX][nextY] = true;
+                TreeNode* child = new TreeNode(nextX, nextY, dir, curr);
+                q.push(child);
+            }
+        }
+    }
+    
+    if (exitNode != nullptr){
+        TreeNode* path = exitNode;
+        GraphObject::Direction dirToMove = GraphObject::none;
+        //for length of path, go through path
+        while (path->parent != nullptr && path->parent != root) {
+            path = path->parent;
+        }
+        if (path->parent == root)
+            dirToMove = path->fromParent;
+        return dirToMove;
+    }
     return GraphObject::none;
 }
 
+
+
   // Determine the direction of the first move a hardcore protester
   // makes to approach the IceMan.
-GraphObject::Direction determineFirstMoveToIceMan(int x, int y){
-    ActivatingObject::Direction d{};
-    return d;
+GraphObject::Direction StudentWorld::determineFirstMoveToIceMan(int x, int y){
+    const int goalX = iceman->getX();
+    const int goalY = iceman->getY();
+    
+    std::queue<TreeNode*> q;
+    bool visited[64][64] = {false};
+    
+    // Root node: the protester's current location
+    TreeNode* root = new TreeNode(x, y, GraphObject::none);
+    //root to track exit
+    TreeNode* exitNode = nullptr;
+    visited[x][y] = true;
+    q.push(root);
+    
+    // stores 4 directions
+   vector<tuple<int, int, GraphObject::Direction>> directions = {  {0, 1, GraphObject::up   },
+                                                                   {0, -1, GraphObject::down},
+                                                                   {-1, 0, GraphObject::left},
+                                                                   {1, 0, GraphObject::right} };
+    while (!q.empty()) {
+        //root to track current/nodes in the queue
+        TreeNode* curr = q.front();
+        q.pop();
+        
+        int cX = curr->x;
+        int cY = curr->y;
+        
+        //at exit
+        if (cX == goalX && cY == goalY) {
+            exitNode = curr;
+            break;
+        }
+        
+        //check if valid for each direction for current place
+        for (auto [dX, dY, dir] : directions) {
+            int nextX = cX + dX;
+            int nextY = cY + dY;
+            
+            if (canActorMoveTo(iceman, nextX, nextY) && !visited[nextX][nextY]) {
+                //if valid put on queue
+                visited[nextX][nextY] = true;
+                TreeNode* child = new TreeNode(nextX, nextY, dir, curr);
+                q.push(child);
+            }
+        }
+    }
+    
+    if (exitNode != nullptr){
+        TreeNode* path = exitNode;
+        GraphObject::Direction dirToMove = GraphObject::none;
+        //for length of path, go through path
+        while (path->parent != nullptr && path->parent != root) {
+            path = path->parent;
+        }
+        if (path->parent == root)
+            dirToMove = path->fromParent;
+        return dirToMove;
+    }
+    return GraphObject::none;
 }
 
 // useable functions
