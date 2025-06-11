@@ -16,7 +16,7 @@ Actor::Actor(StudentWorld* sp, int ID, int x, int y, Direction dir, double siz, 
 }
 
 Actor::~Actor() {
-    cout << "Actor dtor" << endl;
+    //cout << "Actor dtor" << endl;
     setVisible(false);
     m_isAlive = false; // set alive to false when actor is destroyed
     // remove from the set of graph objects
@@ -68,7 +68,7 @@ bool Actor::moveToIfPossible(int x, int y) {
 
 //******************************** Agent Methods *******************************
 Agent::Agent(StudentWorld* sp, int ID, int x, int y, Direction dir,
-    unsigned int hitPoints) : Actor(sp, ID, x, y, dir, 1.0, 0, true) {
+    unsigned int hitPoints) : Actor(sp, ID, x, y, dir, 1.0, 0, true) , hitPoints(hitPoints) {
     //cout << "Agent ctor" << endl;
 
 }
@@ -99,7 +99,7 @@ unsigned int Agent::getHitPoints() const {
 Iceman::Iceman(StudentWorld* sp) : Agent(sp, IID_PLAYER, 30, 60, right, 5) { //contructor
     getGraphObjects(0).insert(this);
     setVisible(true);
-    cout << "iceman ctor" << endl;
+    //cout << "iceman ctor" << endl;
 }
 
 void Iceman::doSomething() {
@@ -154,7 +154,7 @@ void Iceman::doSomething() {
 
             break;
         case KEY_PRESS_TAB: //place gold nugget at current position
-            cout << "tab" << endl;
+            //cout << "tab" << endl;
             if (getGold() != 0) {
                 m_gold--;
                 GoldNugget* nugget = new GoldNugget(sp, getX(), getY(), true);
@@ -191,14 +191,13 @@ void Iceman::doSomething() {
             break;
         case KEY_PRESS_ESCAPE:
             //sp->decLives();
-            cout << "esc" << endl;
             setDead(); // set iceman to dead
             break;
         case 'Z':
             if (getSonar() > 0) { // if iceman has sonar
                 m_sonar--; // decrement sonar
                 sp->playSound(SOUND_SONAR); // play sonar sound
-                getWorld()->revealAllNearbyObjects(getX(), getY(), 60); // reveal all nearby objects
+                getWorld()->revealAllNearbyObjects(getX(), getY(), 12); // reveal all nearby objects
             }
             //use sonar if available
 
@@ -208,7 +207,7 @@ void Iceman::doSomething() {
             if (getSonar() > 0) { // if iceman has sonar
                 m_sonar--; // decrement sonar
                 sp->playSound(SOUND_SONAR);
-                getWorld()->revealAllNearbyObjects(getX(), getY(), 60); // reveal all nearby objects
+                getWorld()->revealAllNearbyObjects(getX(), getY(), 12); // reveal all nearby objects
             }
             break;
         }
@@ -219,20 +218,20 @@ void Iceman::doSomething() {
 bool Iceman::annoy(unsigned int amount) {
     if (getHitPoints() >= 1) {
         Agent::annoy(amount);
-        return true;
+        return false;
     }
     setDead();
     return false;
 }
 
-void Iceman::setDead() {
-    if (sp) {
-        if (sp->getLives() == 0) {
-            m_isAlive = false;
-            sp->playSound(SOUND_PLAYER_GIVE_UP);
-        }
-    }
-}
+//void Iceman::setDead() {
+//    if (sp) {
+//        if (sp->getLives() == 0) {
+//            m_isAlive = false;
+//            sp->playSound(SOUND_PLAYER_GIVE_UP);
+//        }
+//    }
+//}
 
 bool Iceman::canDigThroughIce() const {
     return true;
@@ -271,21 +270,33 @@ unsigned int Iceman::getWater() const {
 Iceman::~Iceman() {
     setVisible(false);
     Iceman::getGraphObjects(0).erase(this);
-    cout << "iceman dtor" << endl;
+    //cout << "iceman dtor" << endl;
 
 }
 
 //******************************** Protester Methods *******************************
-Protester::Protester(StudentWorld* sp, int x, int y, int ID,
-    unsigned int hitPoints, unsigned int score) : Agent(sp, ID, x, y, left, 5) {
+Protester::Protester(StudentWorld* sp, int ID, unsigned int hitPoints, unsigned int score) 
+    : Agent(sp, ID, 60, 60, left, hitPoints) {
     setVisible(true);
-    cout << "protester ctor" << endl;
+    //cout << "protester ctor" << endl;
 
 }
 void Protester::doSomething() { }
 
 bool Protester::annoy(unsigned int amount) {
-    return true;
+    if (this->getHitPoints() > amount) { // if hit points are greater amount (will equal at least 1)
+        sp->playSound(SOUND_PROTESTER_ANNOYED); // play sound
+        restingTicks = std::max(50, 100 - (int)(sp->getLevel() * 10)); // set resting ticks
+        hitPoints -= amount; // reduce hit points by amount
+        return false; // false if not dead yet?
+    }
+    else {
+        hitPoints = 0; // reduce hit points by amount
+        sp->playSound(SOUND_PROTESTER_GIVE_UP); // play sound
+        setMustLeaveOilField(); // leave == true
+        restingTicks = 0; // reset resting ticks
+        return true;
+    }
 }
 
 void Protester::addGold() {
@@ -303,42 +314,48 @@ void Protester::setMustLeaveOilField() {
 
 // Set number of ticks until next move
 void Protester::setTicksToNextMove() {
-    restingTicks = std::max(0, (int)(3 - sp->getLevel() / 4));
-    int ticks = getWorld()->getTicks();
-}
+    restingTicks = std::max(0, (int)(3 - sp->getLevel() / 4));}
 
 void Protester::setSquaresToMoveInCurrentDirection() {
     // 8 <= numSquaresToMoveInCurrentDirection <= 60
 	// random number between 8 and 60
-    numSquaresToMoveInCurrentDirection = (rand() % 53 + 8);
+    numSquaresToMoveInCurrentDirection = (rand() % 60 + 8);
 }
 
 
 //******************************** Regular Protester Methods *******************************
-RegularProtester::RegularProtester(StudentWorld* sp, int x, int y) 
-    : Protester(sp, x, y, IID_PROTESTER, 5, 0) {
-    cout << "regular protester ctor" << endl;
+RegularProtester::RegularProtester(StudentWorld* sp) 
+    : Protester(sp, IID_PROTESTER, 5, 0) {
+    //cout << "regular protester ctor" << endl;
 
 }
 
 void RegularProtester::doSomething() {
+    if (!isAlive()) {
+        return; // do nothing
+    }
+
+    // check if resting (if resting at 0, ignore this part)
     int ticks = getWorld()->getTicks();
     if (restingTicks != 0 && (ticks % restingTicks == 0) && resting == true) {
         resting = false; // reset resting state
     }
+    if (resting == true)
+        return;
 
-    if (!isAlive()) {
-        setTicksToNextMove(); // set ticks to next move
-        return; // do nothing
-    }
-
-    if (getX() == 60 && getY() == 60) {
-        setDead(); // if at exit, set dead
+    // if at exit, set dead
+    if (getX() == 60 && getY() == 60 && leave == true) {
+        setDead();
         return;
     }
+
+    Direction dp = getDirection(); // get current direction
+
+    // if hit points are 0, set to leave oil field
     if (hitPoints == 0)
         this->setMustLeaveOilField(); // leave == true
 
+    // if leaving, determine first move to exit (move 1 square at a time)
     if (leave == true) {
         Direction d = sp->determineFirstMoveToExit(getX(), getY());
         if (d == left) {
@@ -370,33 +387,33 @@ void RegularProtester::doSomething() {
         }
     }
 
-    // if in line of sight, but not facing & more than 4 units away
+    // if in line of sight, but not facing & more than 4 units away, turn to face iceman & move 1 square in that direction
     if (sp->lineOfSightToIceMan(this, false)) {
         if (sp->isNearIceMan(this, 4) == false) {
             // turn to face iceman & move 1 forward
             Direction d = sp->determineFirstMoveToIceMan(getX(), getY());
             if (d == left) {
                 setDirection(left);
-                moveTo(getX() - 1, getY()); // move to exit
+                moveToIfPossible(getX() - 1, getY()); // move to exit
             }
             else if (d == right) {
                 setDirection(right);
-                moveTo(getX() + 1, getY()); // move to exit
+                moveToIfPossible(getX() + 1, getY()); // move to exit
             }
             else if (d == up) {
                 setDirection(up);
-                moveTo(getX(), getY() + 1); // move to exit
+                moveToIfPossible(getX(), getY() + 1); // move to exit
             }
             else if (d == down) {
                 setDirection(down);
-                moveTo(getX(), getY() - 1); // move to exit
+                moveToIfPossible(getX(), getY() - 1); // move to exit
             }
             numSquaresToMoveInCurrentDirection = 0; // new direction
             return;
         }
     }
 
-    // if can't see
+    // if finished wandering, set new direction
     if (numSquaresToMoveInCurrentDirection <= 0) {
         if (sp->canActorMoveTo(this, getX() - 1, getY()) && !(getDirection() == left)) // check if can move left
             setDirection(left);
@@ -407,45 +424,267 @@ void RegularProtester::doSomething() {
         else if (sp->canActorMoveTo(this, getX(), getY() - 1) && !(getDirection() == down)) // check if can move down
             setDirection(down);
         else //last resort direction
-			setDirection(sp->determineFirstMoveToIceMan(getX(), getY())); // if cannot move in current direction, change direction
-		setSquaresToMoveInCurrentDirection(); // reset squares to move in current direction
-	}
-
-	// can move in current direction for numSquaresToMoveInCurrentDirection
-	if (moveToIfPossible(getX(), getY() + 1) && getDirection() == up) {
-		numSquaresToMoveInCurrentDirection--;
-	}
-	else if (moveToIfPossible(getX(), getY() - 1) && getDirection() == down) {
-		numSquaresToMoveInCurrentDirection--;
-	}
-	else if (moveToIfPossible(getX() - 1, getY()) && getDirection() == left) {
-		numSquaresToMoveInCurrentDirection--;
-	}
-	else if (moveToIfPossible(getX() + 1, getY()) && getDirection() == right) {
-		numSquaresToMoveInCurrentDirection--;
-	}
-    else {
-		// if cannot move, change direction
-		numSquaresToMoveInCurrentDirection = 0; // set squares to move in current direction
+            setDirection(sp->determineFirstMoveToIceMan(getX(), getY())); // if cannot move in current direction, change direction
+        setSquaresToMoveInCurrentDirection(); // reset squares to move in current direction
     }
 
-    //if ()
-    //if (perpen == false)
+
+	// set perpendicular turn ticks back to zero if perpen turn is made, else increment
+    if (((dp == left || dp == right) && (getDirection() == up || getDirection() == down)) ||
+        ((dp == up || dp == down) && (getDirection() == left || getDirection() == right))) {
+        perpenTicks = 0; // reset perpendicular turn ticks
+    }
+    else {
+        perpenTicks++; // increment perpendicular turn ticks
+    }
+
+    // if no perpendicular turn in 200 non-resting ticks, change to a perpendicular direction if possible
+    if (perpenTicks >= 200) {
+		if (getDirection() == left || getDirection() == right) { // if current direction is left or right
+			if (sp->canActorMoveTo(this, getX(), getY() + 1)) { // if can move up
+				setDirection(up);
+                perpenTicks = 0; // reset perpendicular turn ticks
+			}
+			else if (sp->canActorMoveTo(this, getX(), getY() - 1)) { // if can move down
+				setDirection(down);
+                perpenTicks = 0; // reset perpendicular turn ticks
+			}
+		}
+		else if (getDirection() == up || getDirection() == down) { // if current direction is up or down
+			if (sp->canActorMoveTo(this, getX() - 1, getY())) { // if can move left
+				setDirection(left);
+                perpenTicks = 0; // reset perpendicular turn ticks
+			}
+			else if (sp->canActorMoveTo(this, getX() + 1, getY())) { // if can move right
+				setDirection(right);
+                perpenTicks = 0; // reset perpendicular turn ticks
+			}
+		}
+        
+    }
 
     if (sp->getTicks() % 15 == 0 && shouted == true) { // reset shout after 15 ticks
         shouted = false;
     }
 
+    // if can't see, just move (wander oil field)
+// can move in current direction for numSquaresToMoveInCurrentDirection
+    if (moveToIfPossible(getX(), getY() + 1) && getDirection() == up) {
+        numSquaresToMoveInCurrentDirection--;
+    }
+    else if (moveToIfPossible(getX(), getY() - 1) && getDirection() == down) {
+        numSquaresToMoveInCurrentDirection--;
+    }
+    else if (moveToIfPossible(getX() - 1, getY()) && getDirection() == left) {
+        numSquaresToMoveInCurrentDirection--;
+    }
+    else if (moveToIfPossible(getX() + 1, getY()) && getDirection() == right) {
+        numSquaresToMoveInCurrentDirection--;
+    }
+    else {
+        // if cannot move, change direction
+        numSquaresToMoveInCurrentDirection = 0; // set squares to move in current direction
+    }
+
 }
 
+
+
 //******************************** Hardcore Protester Methods *******************************
-HardcoreProtester::HardcoreProtester(StudentWorld* sp, int x, int y) 
-    : Protester(sp, x, y, IID_HARD_CORE_PROTESTER, 5, 0) {
-    cout << "hardcore protester ctor" << endl;
+HardcoreProtester::HardcoreProtester(StudentWorld* sp) 
+    : Protester(sp, IID_HARD_CORE_PROTESTER, 20, 0) {
+    //cout << "hardcore protester ctor" << endl;
 
 }
 
 void HardcoreProtester::doSomething() {
+    if (!isAlive()) {
+        setTicksToNextMove(); // set ticks to next move
+        return; // do nothing
+    }
+
+    // check if resting (if resting at 0, ignore this part)
+    int ticks = getWorld()->getTicks();
+    if (restingTicks != 0 && (ticks % restingTicks == 0) && resting == true) {
+        resting = false; // reset resting state
+    }
+    if (resting == true)
+        return;
+
+    // if at exit, set dead
+    if (getX() == 60 && getY() == 60) {
+        setDead();
+        return;
+    }
+
+    Direction dp = getDirection(); // get current direction
+
+    // if hit points are 0, set to leave oil field
+    if (hitPoints == 0)
+        this->setMustLeaveOilField(); // leave == true
+
+    // if leaving, determine first move to exit (move 1 square at a time)
+    if (leave == true) {
+        Direction d = sp->determineFirstMoveToExit(getX(), getY());
+        if (d == left) {
+            setDirection(left);
+            moveTo(getX() - 1, getY()); // move to exit
+        }
+        else if (d == right) {
+            setDirection(right);
+            moveTo(getX() + 1, getY()); // move to exit
+        }
+        else if (d == up) {
+            setDirection(up);
+            moveTo(getX(), getY() + 1); // move to exit
+        }
+        else if (d == down) {
+            setDirection(down);
+            moveTo(getX(), getY() - 1); // move to exit
+        }
+        return;
+    }
+
+    // if iceman is inline of sight, facing and within 4 squares = shout
+    if (sp->findNearbyIceMan(this, 4) != nullptr) {
+        if (sp->facingTowardIceMan(this)) {
+            if (shouted == false) {
+                sp->playSound(SOUND_PROTESTER_YELL);
+                sp->getIceman()->annoy(2); // annoy iceman 2 points
+            }
+            shouted = true;
+        }
+        return;
+    }
+
+    // if within M squares, hunt iceman down via phone signal
+    int M = 16 + (sp->getLevel()) * 2;
+    if (sp->findNearbyIceMan(this, M)) {// find nearby iceman within M steps
+        Direction d = sp->determineFirstMoveToIceMan(getX(), getY());
+        if (d == left) {
+            setDirection(left);
+            moveToIfPossible(getX() - 1, getY()); // move to exit
+        }
+        else if (d == right) {
+            setDirection(right);
+            moveToIfPossible(getX() + 1, getY()); // move to exit
+        }
+        else if (d == up) {
+            setDirection(up);
+            moveToIfPossible(getX(), getY() + 1); // move to exit
+        }
+        else if (d == down) {
+            setDirection(down);
+            moveToIfPossible(getX(), getY() - 1); // move to exit
+        }
+        numSquaresToMoveInCurrentDirection = 0; // new direction
+        return;
+    }
+
+
+	// if in line of sight, but not facing & more than 4 units away, turn to face iceman & move 1 square in that direction// if in line of sight, but not facing & more than 4 units away, turn to face iceman & move 1 square in that direction
+    if (sp->lineOfSightToIceMan(this, false)) { //has line of sight to iceman, but not correct direction
+        if (sp->isNearIceMan(this, 4) == false && sp->lineOfSightToIceMan(this, false)) { // greater than 4 squares away
+            // turn to face iceman & move 1 forward
+            Direction d = sp->determineFirstMoveToIceMan(getX(), getY());
+            if (d == left) {
+                setDirection(left);
+                moveToIfPossible(getX() - 1, getY()); // move to exit
+            }
+            else if (d == right) {
+                setDirection(right);
+                moveToIfPossible(getX() + 1, getY()); // move to exit
+            }
+            else if (d == up) {
+                setDirection(up);
+                moveToIfPossible(getX(), getY() + 1); // move to exit
+            }
+            else if (d == down) {
+                setDirection(down);
+                moveToIfPossible(getX(), getY() - 1); // move to exit
+            }
+            numSquaresToMoveInCurrentDirection = 0; // new direction
+            return;
+        }
+    }
+
+    // if finished wandering, set new direction
+    if (numSquaresToMoveInCurrentDirection <= 0) {
+        if (sp->canActorMoveTo(this, getX() - 1, getY()) && !(getDirection() == left)) // check if can move left
+            setDirection(left);
+        else if (sp->canActorMoveTo(this, getX() + 1, getY()) && !(getDirection() == right)) // check if can move right
+            setDirection(right);
+        else if (sp->canActorMoveTo(this, getX(), getY() + 1) && !(getDirection() == up)) // check if can move up
+            setDirection(up);
+        else if (sp->canActorMoveTo(this, getX(), getY() - 1) && !(getDirection() == down)) // check if can move down
+            setDirection(down);
+        else //last resort direction
+            setDirection(sp->determineFirstMoveToIceMan(getX(), getY())); // if cannot move in current direction, change direction
+        setSquaresToMoveInCurrentDirection(); // reset squares to move in current direction
+    }
+
+
+
+    // set perpendicular turn ticks back to zero if perpen turn is made, else increment
+    if (((dp == left || dp == right) && (getDirection() == up || getDirection() == down)) ||
+        ((dp == up || dp == down) && (getDirection() == left || getDirection() == right))) {
+        perpenTicks = 0; // reset perpendicular turn ticks
+    }
+    else {
+        perpenTicks++; // increment perpendicular turn ticks
+    }
+
+    // if no perpendicular turn in 200 non-resting ticks, change to a perpendicular direction if possible
+    if (perpenTicks >= 200) {
+        if (getDirection() == left || getDirection() == right) { // if current direction is left or right
+            if (sp->canActorMoveTo(this, getX(), getY() + 1)) { // if can move up
+                setDirection(up);
+                setSquaresToMoveInCurrentDirection();
+                perpenTicks = 0; // reset perpendicular turn ticks
+            }
+            else if (sp->canActorMoveTo(this, getX(), getY() - 1)) { // if can move down
+                setDirection(down);
+                setSquaresToMoveInCurrentDirection();
+                perpenTicks = 0; // reset perpendicular turn ticks
+            }
+        }
+        else if (getDirection() == up || getDirection() == down) { // if current direction is up or down
+            if (sp->canActorMoveTo(this, getX() - 1, getY())) { // if can move left
+                setDirection(left);
+                setSquaresToMoveInCurrentDirection();
+                perpenTicks = 0; // reset perpendicular turn ticks
+            }
+            else if (sp->canActorMoveTo(this, getX() + 1, getY())) { // if can move right
+                setDirection(right);
+                setSquaresToMoveInCurrentDirection();
+                perpenTicks = 0; // reset perpendicular turn ticks
+            }
+        }
+        
+    }
+
+    if (sp->getTicks() % 15 == 0 && shouted == true) { // reset shout after 15 ticks
+        shouted = false;
+    }
+
+    // if can't see, just move (wander oil field)
+// can move in current direction for numSquaresToMoveInCurrentDirection
+    if (moveToIfPossible(getX(), getY() + 1) && getDirection() == up) {
+        numSquaresToMoveInCurrentDirection--;
+    }
+    else if (moveToIfPossible(getX(), getY() - 1) && getDirection() == down) {
+        numSquaresToMoveInCurrentDirection--;
+    }
+    else if (moveToIfPossible(getX() - 1, getY()) && getDirection() == left) {
+        numSquaresToMoveInCurrentDirection--;
+    }
+    else if (moveToIfPossible(getX() + 1, getY()) && getDirection() == right) {
+        numSquaresToMoveInCurrentDirection--;
+    }
+    else {
+        // if cannot move, change direction
+        numSquaresToMoveInCurrentDirection = 0; // set squares to move in current direction
+    }
 
 }
 
@@ -453,15 +692,15 @@ void HardcoreProtester::doSomething() {
 //******************************** Ice Methods *******************************
 
 //constructor
-Ice::Ice(StudentWorld* sp) : Actor(sp, IID_ICE, getX(), getY(), right, 0.25, 3, true) {
-    cout << "Ice ctor" << endl;
+Ice::Ice(StudentWorld* sp, int x, int y) : Actor(sp, IID_ICE, x, y, right, 0.25, 3, true) {
+    //cout << "Ice ctor" << endl;
     setVisible(true);
     // add to the set of graph objects
     getGraphObjects(3).insert(this);
 }
 
 Ice::~Ice() {
-    cout << "Ice dtor" << endl;
+    //cout << "Ice dtor" << endl;
     setVisible(false);
     Ice::getGraphObjects(3).erase(this); // remove from the set of graph objects
 }
@@ -471,9 +710,9 @@ void Ice::doSomething() {
 }
 
 //******************************** Boulder Methods *******************************
-Boulder::Boulder(StudentWorld* sp) : Actor(sp, IID_BOULDER, getX(), getY(), down, 1.0, 1, true) {
+Boulder::Boulder(StudentWorld* sp, int x, int y) : Actor(sp, IID_BOULDER, x, y, down, 1.0, 1, true) {
     setVisible(true);
-    cout << "boulder ctor" << endl;
+    //cout << "boulder ctor" << endl;
 
 }
 bool Boulder::canActorsPassThroughMe() const {
@@ -516,16 +755,11 @@ void Boulder::doSomething() {
 
 //******************************** Squirt Methods *******************************
 
-//Squirt::Squirt(StudentWorld* sp, int x, int y, Direction dir) : Actor(sp, IID_WATER_SPURT, getX(), getY(), right, 1.0, 1, true) {
-//    setVisible(true);
-//
-//}
-
 Squirt::Squirt(StudentWorld* sp, int x, int y, Direction dir) : Actor(sp, IID_WATER_SPURT, x, y, dir, 1.0, 1, false) {
     //let doSomething decide if it should appear
     sp->addActor(this);
     setVisible(true);
-    cout << "squirt ctor" << endl;
+    //cout << "squirt ctor" << endl;
 }
 
 void Squirt::doSomething() {
@@ -533,28 +767,30 @@ void Squirt::doSomething() {
     if (!isAlive()) {
         return; // if not alive, do nothing
     }
+    
 
-    if (sp->canActorMoveTo(this, getX(), getY() + 4) && getDirection() == up) {
+
+    if (sp->canActorMoveTo(this, getX(), getY() + 1) && getDirection() == up) {
         if (!sp->NearBoulder(getX(), getY() + 4, 3))
-            moveTo(getX(), getY() + 4);
+            moveTo(getX(), getY() + 1);
         else
             setDead();// if cannot move, set dead
     }
-    else if (sp->canActorMoveTo(this, getX(), getY() - 4) && getDirection() == down) {
+    else if (sp->canActorMoveTo(this, getX(), getY() - 1) && getDirection() == down) {
         if (!sp->NearBoulder(getX(), getY() - 4, 3))
-            moveTo(getX(), getY() - 4);
+            moveTo(getX(), getY() - 1);
         else
             setDead();
     }
-    else if (sp->canActorMoveTo(this, getX() - 4, getY()) && getDirection() == left) {
+    else if (sp->canActorMoveTo(this, getX() - 1, getY()) && getDirection() == left) {
         if (!sp->NearBoulder(getX() - 4, getY(), 3))
-            moveTo(getX() - 4, getY());
+            moveTo(getX() - 1, getY());
         else
             setDead();
     }
-    else if (sp->canActorMoveTo(this, getX() + 4, getY()) && getDirection() == right) {
+    else if (sp->canActorMoveTo(this, getX() + 1, getY()) && getDirection() == right) {
         if (!sp->NearBoulder(getX() + 4, getY(), 3))
-            moveTo(getX() + 4, getY());
+            moveTo(getX() + 1, getY());
         else
             setDead();
     }
@@ -563,6 +799,18 @@ void Squirt::doSomething() {
         return;
     }
 
+    // if is a nearby protester gets hit, annoy them
+	if (sp->findNearbyPickerUpper(this, 3) != nullptr) {
+		Agent* nearby = sp->findNearbyPickerUpper(this, 3);
+        if (!nearby->leavingOilField()) { // if not in leaving state, annoy
+            nearby->annoy(2); // annoy protester by 2
+            sp->increaseScore(100); 
+            if (nearby->getID() == IID_HARD_CORE_PROTESTER)
+				sp->increaseScore(150); // 250 points for hardcore protester
+            setDead(); // set squirt to dead
+            return;
+        }
+	}
 }
 
 
@@ -596,10 +844,11 @@ ActivatingObject::~ActivatingObject() {
 }
 
 //******************************** Oil Methods *******************************
-BarrelsOfOil::BarrelsOfOil(StudentWorld* sp) : ActivatingObject(sp, (std::rand() % 59), (std::rand() % 59), IID_BARREL, SOUND_FOUND_OIL, true, false, false) {
+BarrelsOfOil::BarrelsOfOil(StudentWorld* sp, int x, int y) 
+    : ActivatingObject(sp, x, y, IID_BARREL, SOUND_FOUND_OIL, true, false, false) {
     getGraphObjects(2).insert(this);
     setVisible(false);
-    cout << "Barrels of Oil ctor" << endl;
+    //cout << "Barrels of Oil ctor" << endl;
 }
 
 void BarrelsOfOil::doSomething() {
@@ -609,7 +858,7 @@ void BarrelsOfOil::doSomething() {
             return;
         }
         if (sp->findNearbyIceMan(this, 3) != nullptr) {
-            cout << "barrel picked up" << endl;
+            //cout << "barrel picked up" << endl;
             sp->playSound(SOUND_FOUND_OIL); // play sound
             sp->increaseScore(1000); // increase score by 10
             //setVisible(false);
@@ -626,26 +875,25 @@ bool BarrelsOfOil::needsToBePickedUpToFinishLevel() const {
 BarrelsOfOil::~BarrelsOfOil() {
     setVisible(false);
     BarrelsOfOil::getGraphObjects(2).erase(this); // remove from the set of graph objects
-    cout << "barrelofoil dtor" << endl;
+    //cout << "barrelofoil dtor" << endl;
 }
 
 
 
 //******************************** Gold Nuggets Methods *******************************
-GoldNugget::GoldNugget(StudentWorld* sp, int x, int y, bool temporary) :
-    ActivatingObject(sp, x, y, IID_GOLD, SOUND_GOT_GOODIE, true, true, false),
+GoldNugget::GoldNugget(StudentWorld* sp, int x, int y, bool temporary) 
+    : ActivatingObject(sp, x, y, IID_GOLD, SOUND_GOT_GOODIE, true, true, false),
     temporary(temporary) // initialize temporary, pickup, and lifetime
 {
     getGraphObjects(2).insert(this);
     setVisible(false);
-    //moveTo((std::rand() % 59), (std::rand() % 59)); // random position in the world
-    cout << "gold ctor" << endl;
+    //cout << "gold ctor" << endl;
 }
 
 GoldNugget::~GoldNugget() {
     setVisible(false);
     getGraphObjects(2).erase(this);
-    cout << "gold dtor" << endl;
+    //cout << "gold dtor" << endl;
 }
 
 void GoldNugget::doSomething() {
@@ -743,15 +991,13 @@ SonarKit::~SonarKit() {
 }
 
 //******************************** Water Pool Methods *******************************
-WaterPool::WaterPool(StudentWorld* sp)
-    : ActivatingObject(sp, (std::rand() % 59), (std::rand() % 59), IID_WATER_POOL, SOUND_GOT_GOODIE, true, false, true) // initially active false -> true
+WaterPool::WaterPool(StudentWorld* sp, int x, int y)
+    : ActivatingObject(sp, x, y, IID_WATER_POOL, SOUND_GOT_GOODIE, true, false, true) // initially active false -> true
 {
     sp->playSound(SOUND_FALLING_ROCK);
-    cout << "WaterPool ctor" << endl;
+    //cout << "WaterPool ctor" << endl;
     getGraphObjects(2).insert(this);
     setVisible(true);
-    //moveTo((std::rand() % 59), (std::rand() % 59)); // random position in the world
-
 }
 
 void WaterPool::doSomething() {

@@ -30,7 +30,7 @@ public:
             delete iceObj; // delete all ice objects
         }
         iceField.clear();
-        cout << "StudentWorld dtor" << endl;
+        //cout << "StudentWorld dtor" << endl;
 
     };
 
@@ -49,6 +49,7 @@ public:
     void revealAllNearbyObjects(int x, int y, int radius);
     Iceman* findNearbyIceMan(Actor* a, int radius) const;
     Agent* findNearbyPickerUpper(Actor* a, int radius) const;
+    Protester* findNearbyProtester(Actor* a, int radius) const;
     //void annoyIceMan();
     void giveIceManSonar();
     void giveIceManWater();
@@ -56,6 +57,8 @@ public:
     GraphObject::Direction lineOfSightToIceMan(Actor* a, bool facing) const;
     bool isNearIceMan(Actor* a, int radius) const;
     bool NearBoulder(int x, int y, int radius) const;
+    bool NearItem(int x, int y, int radius) const;
+    bool atItem(int x, int y) const;
     GraphObject::Direction determineFirstMoveToExit(int x, int y);
     GraphObject::Direction determineFirstMoveToIceMan(int x, int y);
 
@@ -113,6 +116,7 @@ private:
     int currentLevelNumber = 1;
 
     vector<pair<int, int>> coords;
+
 };
 
 
