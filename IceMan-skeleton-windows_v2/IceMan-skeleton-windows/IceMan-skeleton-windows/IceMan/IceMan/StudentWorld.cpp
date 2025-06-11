@@ -41,8 +41,8 @@ int StudentWorld::init() {
 		int x, y; // must be (0, 20) and (60, 56) inclusive
 		do {
 			x = rand() % 61; // random x coordinate
-			y = rand() % 56 + 20; // random y coordinate
-		} while (NearItem(x, y, 6)); // check if boulder is too close to another boulder
+			y = rand() % 53 + 20; // random y coordinate
+		} while (NearItem(x, y, 6) || (x > 29 && x < 34 && y > 3)); // check if boulder is too close to another boulder
 		Boulder* boulder = new Boulder(sw, x, y);
 		iceField.push_back(boulder); // add boulder to aobj vector
 	}
@@ -86,10 +86,9 @@ int StudentWorld::init() {
 		GoldNugget* nugget = new GoldNugget(sw, (std::rand() % 61), (std::rand() % 57), false);
 		aobj.push_back(nugget);
 	}
-
-
-	RegularProtester* prot = new RegularProtester(sw);
-	agents.push_back(prot); // add protester to agents vector
+	//start with 1 protester
+	RegularProtester* rp = new RegularProtester(sw);
+	agents.push_back(rp); // add protester to agents vector
 	return GWSTATUS_CONTINUE_GAME;
 }
 
@@ -144,9 +143,11 @@ int StudentWorld::move() {
 		else { // 4 in 5 chance of water pool
 			int x, y; // 
 			do {
-				x = rand() % 61; // random x coordinate
-				y = rand() % 61; // random y coordinate
-			} while ((!atItem(x, y, true)) && !NearItem(x, y, 6)); // check if boulder is too close to another boulder
+				x = rand() % 57; // random x coordinate
+				y = rand() % 57; // random y coordinate
+			} while ((atItem(x, y, true)) || atItem(x + 3, y, true) 
+				|| atItem(x, y + 3, true) || atItem(x + 3, y + 3, true) 
+				|| NearItem(x, y, 6)); // check if boulder is too close to another boulder
 			WaterPool* pool = new WaterPool(this, x, y); // random iceless spot
 			aobj.push_back(pool);
 		}
@@ -280,7 +281,7 @@ void StudentWorld::clearIce(int x, int y) {
 
 
 bool StudentWorld::canActorMoveTo(Actor* a, int x, int y) const {
-	if (x < 0 || x >= 64 || y < 0 || y >= 60) {
+	if (x < 0 || x >= 60 || y < 0 || y >= 64) {
 		return false; // out of bounds
 	}
 	for (auto& ice : iceField) {
@@ -388,7 +389,8 @@ GraphObject::Direction StudentWorld::lineOfSightToIceMan(Actor* a, bool facing) 
 	}
 	bool blocked = false; // if there is an object in the way
 
-	if (a->getX() == iceman->getX()) {
+	if (a->getX() == iceman->getX() && a->getX() + 1 == iceman->getX() + 1
+		&& a->getX() + 2 == iceman->getX() + 2 && a->getX() +3 == iceman->getX() + 3) {
 		if (iceman->getY() > a->getY()) { // if iceman is up from a
 			for (int i = a->getY(); i < iceman->getY(); i++) { //starting at actor, ending at iceman
 				for (int h = 0; h < iceField.size(); h++) {// i = x coords  getY = y coords
@@ -397,17 +399,17 @@ GraphObject::Direction StudentWorld::lineOfSightToIceMan(Actor* a, bool facing) 
 							blocked = true;
 						}
 					}
-					if (iceField[h]->getX() == a->getX() + 1 && iceField[h]->isVisible()) {
+					else if (iceField[h]->getX() == a->getX() + 1 && iceField[h]->isVisible()) {
 						if (iceField[h]->getY() == i) { // x, y coords match i = line of x coords
 							blocked = true;
 						}
 					}
-					if (iceField[h]->getX() == a->getX() + 2 && iceField[h]->isVisible()) {
+					else if (iceField[h]->getX() == a->getX() + 2 && iceField[h]->isVisible()) {
 						if (iceField[h]->getY() == i) { // x, y coords match i = line of x coords
 							blocked = true;
 						}
 					}
-					if (iceField[h]->getX() == a->getX() + 3 && iceField[h]->isVisible()) {
+					else if (iceField[h]->getX() == a->getX() + 3 && iceField[h]->isVisible()) {
 						if (iceField[h]->getY() == i) { // x, y coords match i = line of x coords
 							blocked = true;
 						}
@@ -449,8 +451,8 @@ GraphObject::Direction StudentWorld::lineOfSightToIceMan(Actor* a, bool facing) 
 		  y							x + i						y
 	*/
 	// same y level as iceman
-	else if (a->getY() == iceman->getY() || a->getY() == iceman->getY() + 1 ||
-		a->getY() == iceman->getY() + 2 || a->getY() == iceman->getY() + 3) {
+	else if (a->getY() == iceman->getY() && a->getY() + 1 == iceman->getY() + 1 &&
+		a->getY() + 2 == iceman->getY() + 2 && a->getY() + 3 == iceman->getY() + 3) {
 		if (iceman->getX() > a->getX()) { // if iceman is to the right of a
 			for (int i = a->getX(); i < iceman->getX(); i++) { //starting at actor, ending at iceman
 				for (int h = 0; h < iceField.size(); h++) {// i = x coords  getY = y coords
@@ -459,17 +461,17 @@ GraphObject::Direction StudentWorld::lineOfSightToIceMan(Actor* a, bool facing) 
 							blocked = true;
 						}
 					}
-					if (iceField[h]->getY() == a->getY() + 1 && iceField[h]->isVisible()) {
+					if (iceField[h]->getY() == a->getY() - 1 && iceField[h]->isVisible()) {
 						if (iceField[h]->getX() == i) { // x, y coords match i = line of x coords
 							blocked = true;
 						}
 					}
-					if (iceField[h]->getY() == a->getY() + 2 && iceField[h]->isVisible()) {
+					if (iceField[h]->getY() == a->getY() - 2 && iceField[h]->isVisible()) {
 						if (iceField[h]->getX() == i) { // x, y coords match i = line of x coords
 							blocked = true;
 						}
 					}
-					if (iceField[h]->getY() == a->getY() + 3 && iceField[h]->isVisible()) {
+					if (iceField[h]->getY() == a->getY() - 3 && iceField[h]->isVisible()) {
 						if (iceField[h]->getX() == i) { // x, y coords match i = line of x coords
 							blocked = true;
 						}
@@ -510,6 +512,12 @@ GraphObject::Direction StudentWorld::lineOfSightToIceMan(Actor* a, bool facing) 
 		}
 		else if (a->getY() < iceman->getY()) {
 			return GraphObject::Direction::down;
+		}
+		else if (iceman->getX() > a->getX()) {
+			return GraphObject::Direction::right;
+		}
+		else if (iceman->getX() < a->getX()) {
+			return GraphObject::Direction::left;
 		}
 	}
 	return GraphObject::Direction::none;

@@ -49,7 +49,6 @@ public:
     void revealAllNearbyObjects(int x, int y, int radius);
     Iceman* findNearbyIceMan(Actor* a, int radius) const;
     Agent* findNearbyPickerUpper(Actor* a, int radius) const;
-    Protester* findNearbyProtester(Actor* a, int radius) const;
     //void annoyIceMan();
     void giveIceManSonar();
     void giveIceManWater();
@@ -63,11 +62,7 @@ public:
     GraphObject::Direction determineFirstMoveToIceMan(int x, int y);
 
     //getter functions
-    virtual const int getCurrentHealth() {
-        int hitp = iceman->getHitPoints();
-        hitp = (hitp / 10) * 100;
-        return hitp;
-    };
+    virtual const int getCurrentHealth() { return (int) ((iceman->getHitPoints() / 10) * 100); };
     virtual const int getSquirtsLeftInSquirtGun() { return iceman->getWater(); };
     virtual const int getPlayerGoldCount() { return iceman->getGold(); };
     virtual const int getBarrelsRemaining() {

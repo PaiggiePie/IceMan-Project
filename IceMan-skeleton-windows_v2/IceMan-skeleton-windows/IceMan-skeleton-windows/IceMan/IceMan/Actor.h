@@ -138,7 +138,7 @@ public:
     Protester(StudentWorld* sp, int ID, unsigned int hitPoints, unsigned int score);
     virtual void doSomething();
     virtual bool annoy(unsigned int amount);
-    void addGold() override;
+    virtual void addGold() override;
     unsigned int getGold() const { return m_gold; } // getter for gold
     virtual bool huntsIceMan() const;
 
@@ -157,9 +157,6 @@ protected:
     int restingTicks = 0;
 	int perpenTicks = 0; // number of ticks since last perpendicular turn
     int numSquaresToMoveInCurrentDirection = 30;
-
-
-private:
     unsigned int m_gold = 0;
 };
 
@@ -176,7 +173,7 @@ class HardcoreProtester : public Protester {
 public:
     HardcoreProtester(StudentWorld* sp);
     virtual void doSomething();
-
+    void addGold() override;
 };
 
 

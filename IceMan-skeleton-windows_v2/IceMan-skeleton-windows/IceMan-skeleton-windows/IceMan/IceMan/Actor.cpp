@@ -96,7 +96,7 @@ unsigned int Agent::getHitPoints() const {
 }
 //******************************** IceMan Methods *******************************
 
-Iceman::Iceman(StudentWorld* sp) : Agent(sp, IID_PLAYER, 30, 60, right, 5) { //contructor
+Iceman::Iceman(StudentWorld* sp) : Agent(sp, IID_PLAYER, 30, 60, right, 10) { //contructor
     getGraphObjects(0).insert(this);
     setVisible(true);
     //cout << "iceman ctor" << endl;
@@ -301,6 +301,8 @@ bool Protester::annoy(unsigned int amount) {
 
 void Protester::addGold() {
     m_gold++;
+    restingTicks = 0;
+    setMustLeaveOilField(); // regulars must leave after being bribed
 }
 
 bool Protester::huntsIceMan() const {
@@ -377,11 +379,13 @@ void RegularProtester::doSomething() {
         return;
     }
 
+    if (sp->getTicks() % 15 == 0 && shouted == true) { // reset shout after 15 ticks
+        shouted = false;
+    }
     // if iceman is inline of sight, facing and within 4 squares = shout
-    if (sp->findNearbyIceMan(this, 4) != nullptr) {
-        if (sp->facingTowardIceMan(this)) {
-            if (shouted == false)
-                sp->playSound(SOUND_PROTESTER_YELL);
+    if (sp->findNearbyIceMan(this, 4) != nullptr && sp->facingTowardIceMan(this)) {
+        if (shouted == false) {
+            sp->playSound(SOUND_PROTESTER_YELL);
             sp->getIceman()->annoy(2); // annoy iceman 2 points
             shouted = true;
         }
@@ -389,28 +393,26 @@ void RegularProtester::doSomething() {
 
     // if in line of sight, but not facing & more than 4 units away, turn to face iceman & move 1 square in that direction
     if (sp->lineOfSightToIceMan(this, false)) {
-        if (sp->isNearIceMan(this, 4) == false) {
-            // turn to face iceman & move 1 forward
-            Direction d = sp->determineFirstMoveToIceMan(getX(), getY());
-            if (d == left) {
-                setDirection(left);
-                moveToIfPossible(getX() - 1, getY()); // move to exit
-            }
-            else if (d == right) {
-                setDirection(right);
-                moveToIfPossible(getX() + 1, getY()); // move to exit
-            }
-            else if (d == up) {
-                setDirection(up);
-                moveToIfPossible(getX(), getY() + 1); // move to exit
-            }
-            else if (d == down) {
-                setDirection(down);
-                moveToIfPossible(getX(), getY() - 1); // move to exit
-            }
-            numSquaresToMoveInCurrentDirection = 0; // new direction
-            return;
+        // turn to face iceman & move 1 forward
+        Direction d = sp->determineFirstMoveToIceMan(getX(), getY());
+        if (d == left) {
+            setDirection(left);
+            moveToIfPossible(getX() - 1, getY()); // move to exit
         }
+        else if (d == right) {
+            setDirection(right);
+            moveToIfPossible(getX() + 1, getY()); // move to exit
+        }
+        else if (d == up) {
+            setDirection(up);
+            moveToIfPossible(getX(), getY() + 1); // move to exit
+        }
+        else if (d == down) {
+            setDirection(down);
+            moveToIfPossible(getX(), getY() - 1); // move to exit
+        }
+        numSquaresToMoveInCurrentDirection = 0; // new direction
+        return;
     }
 
     // if finished wandering, set new direction
@@ -463,22 +465,24 @@ void RegularProtester::doSomething() {
         
     }
 
-    if (sp->getTicks() % 15 == 0 && shouted == true) { // reset shout after 15 ticks
-        shouted = false;
-    }
+
 
     // if can't see, just move (wander oil field)
 // can move in current direction for numSquaresToMoveInCurrentDirection
-    if (moveToIfPossible(getX(), getY() + 1) && getDirection() == up) {
+    if (sp->canActorMoveTo(this, getX(), getY() + 1) && getDirection() == up) {
+        moveToIfPossible(getX(), getY() + 1);
         numSquaresToMoveInCurrentDirection--;
     }
-    else if (moveToIfPossible(getX(), getY() - 1) && getDirection() == down) {
+    else if (sp->canActorMoveTo(this, getX(), getY() - 1) && getDirection() == down) {
+        moveToIfPossible(getX(), getY() - 1);
         numSquaresToMoveInCurrentDirection--;
     }
-    else if (moveToIfPossible(getX() - 1, getY()) && getDirection() == left) {
+    else if (sp->canActorMoveTo(this, getX() - 1, getY()) && getDirection() == left) {
+        moveToIfPossible(getX() - 1, getY());
         numSquaresToMoveInCurrentDirection--;
     }
-    else if (moveToIfPossible(getX() + 1, getY()) && getDirection() == right) {
+    else if (sp->canActorMoveTo(this, getX() + 1, getY()) && getDirection() == right) {
+        moveToIfPossible(getX() + 1, getY());
         numSquaresToMoveInCurrentDirection--;
     }
     else {
@@ -551,10 +555,10 @@ void HardcoreProtester::doSomething() {
             if (shouted == false) {
                 sp->playSound(SOUND_PROTESTER_YELL);
                 sp->getIceman()->annoy(2); // annoy iceman 2 points
+                return;
             }
             shouted = true;
         }
-        return;
     }
 
     // if within M squares, hunt iceman down via phone signal
@@ -686,6 +690,12 @@ void HardcoreProtester::doSomething() {
         numSquaresToMoveInCurrentDirection = 0; // set squares to move in current direction
     }
 
+}
+
+void HardcoreProtester::addGold() {
+    // increasing score, sound added in gold func
+    m_gold++;
+    restingTicks = max(50, (int) (100 - sp->getLevel() * 10)); // time to stare before chasing again
 }
 
 
@@ -917,8 +927,10 @@ void GoldNugget::doSomething() {
             && temporary == true) {
             a->addGold(); // add gold to protester inventory
             this->setDead(); // if protester is in radius 3, set dead
-            sp->playSound(SOUND_GOT_GOODIE); // play sound
+            sp->playSound(SOUND_PROTESTER_FOUND_GOLD); // play sound
             sp->increaseScore(25); // increase score by 25
+            if (a->getID() == IID_HARD_CORE_PROTESTER)
+                sp->increaseScore(25); // 50 points for hardcore
             return;
         }
     }
