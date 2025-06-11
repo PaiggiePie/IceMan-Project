@@ -4,6 +4,7 @@
 #include <vector>
 #include <cmath>
 #include <random>
+#include <queue>
 using namespace std;
 
 class Actor;
@@ -67,18 +68,19 @@ int StudentWorld::init() {
 	Boulder* boulder = new Boulder(this);
 	iceField.push_back(boulder);*/
 
+	RegularProtester* prot = new RegularProtester(sw, 50, 60);
+	agents.push_back(prot); // add protester to agents vector
 	return GWSTATUS_CONTINUE_GAME;
 }
 
 
 int StudentWorld::move() {
 	//testing
-	/*if (aobj[0] != NULL) {
-		int X = aobj[0]->getX();
-		int Y = aobj[0]->getY();
+		int X = iceman->getX();
+		int Y = iceman->getY();
 		cout << X << ", " << Y << endl;
-	}
-	cout << "Score: " << getScore() << endl;
+	
+	/*cout << "Score: " << getScore() << endl;
 	cout << "Level: " << getLevel() << endl;
 
 	cout << "tick: " << ticks << endl;*/
@@ -89,7 +91,7 @@ int StudentWorld::move() {
 	int probabilityOfHardcore = min(90, currentLevelNumber * 10 + 30);
 	currentLevelNumber = getLevel(); // get the current level number
 	int ticksToWaitBetweenMoves = max(0, (3 - currentLevelNumber / 4));
-	if ((ticks - ticksToWaitBetweenMoves) % 2 == 0) {
+	if (ticks % ticksToWaitBetweenMoves == 0) {
 		canAddP = true;
 	}
 	if (canAddP == true) {
@@ -228,6 +230,8 @@ void StudentWorld::clearIce(int x, int y) {
 					playSound(SOUND_DIG);*/
 					//iceObj->setDead();
 				cout << "clear ice" << endl;
+				pair<int, int> coord = { make_pair(iceObj->getX(), iceObj->getY()) };
+				coords.push_back(coord);
 			}
 		}
 	}
@@ -332,10 +336,11 @@ bool StudentWorld::facingTowardIceMan(Actor* a) const {
 	return false;
 }
 
+
 // If the Actor a has a clear line of sight to the IceMan, return
 	  // the direction to the IceMan, otherwise GraphObject::none.
-GraphObject::Direction StudentWorld::lineOfSightToIceMan(Actor* a) const {
-	if (facingTowardIceMan(a) == false) {
+GraphObject::Direction StudentWorld::lineOfSightToIceMan(Actor* a, bool facing) const {
+	if (facingTowardIceMan(a) == false && facing == true) {
 		return GraphObject::Direction::none; // if actor is not facing towards iceman, return none
 	}
 	bool blocked = false; // if there is an object in the way
@@ -413,6 +418,8 @@ GraphObject::Direction StudentWorld::determineFirstMoveToIceMan(int x, int y) {
 	return GraphObject::Direction::none; // placeholder, implement logic to determine first move to exit
 
 }
+
+
 
 // useable functions
 //unsigned int getLives() const;

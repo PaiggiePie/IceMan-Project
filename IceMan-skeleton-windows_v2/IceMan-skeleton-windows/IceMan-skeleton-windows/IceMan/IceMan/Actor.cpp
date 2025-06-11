@@ -68,7 +68,7 @@ bool Actor::moveToIfPossible(int x, int y) {
 
 //******************************** Agent Methods *******************************
 Agent::Agent(StudentWorld* sp, int ID, int x, int y, Direction dir,
-    unsigned int hitPoints) : Actor(sp, ID, x, y, right, 1.0, 0, true) {
+    unsigned int hitPoints) : Actor(sp, ID, x, y, dir, 1.0, 0, true) {
     //cout << "Agent ctor" << endl;
 
 }
@@ -127,7 +127,7 @@ void Iceman::doSomething() {
             if (d != right) {
                 setDirection(right);
             }
-            else if (getX() < 61) {
+            else if (getX() < 60) {
                 moveTo(getX() + 1, getY());
                 sp->clearIce(getX(), getY());
             }
@@ -137,7 +137,7 @@ void Iceman::doSomething() {
             if (d != up) {
                 setDirection(up);
             }
-            else if (getY() < 61) {
+            else if (getY() < 60) {
                 moveTo(getX(), getY() + 1);
                 sp->clearIce(getX(), getY());
             }
@@ -282,9 +282,7 @@ Protester::Protester(StudentWorld* sp, int x, int y, int ID,
     cout << "protester ctor" << endl;
 
 }
-void Protester::doSomething() {
-
-}
+void Protester::doSomething() { }
 
 bool Protester::annoy(unsigned int amount) {
     return true;
@@ -300,28 +298,149 @@ bool Protester::huntsIceMan() const {
 
 // Set state to having given up protest
 void Protester::setMustLeaveOilField() {
-    m_state = true;
+    leave = true;
 }
 
 // Set number of ticks until next move
 void Protester::setTicksToNextMove() {
+    restingTicks = std::max(0, (int)(3 - sp->getLevel() / 4));
     int ticks = getWorld()->getTicks();
+}
 
+void Protester::setSquaresToMoveInCurrentDirection() {
+    // 8 <= numSquaresToMoveInCurrentDirection <= 60
+	// random number between 8 and 60
+    numSquaresToMoveInCurrentDirection = (rand() % 53 + 8);
 }
 
 
 //******************************** Regular Protester Methods *******************************
-RegularProtester::RegularProtester(StudentWorld* sp, int x, int y, int ID) : Protester(sp, x, y, IID_PROTESTER, 5, 0) {
+RegularProtester::RegularProtester(StudentWorld* sp, int x, int y) 
+    : Protester(sp, x, y, IID_PROTESTER, 5, 0) {
     cout << "regular protester ctor" << endl;
 
 }
 
 void RegularProtester::doSomething() {
+    int ticks = getWorld()->getTicks();
+    if (restingTicks != 0 && (ticks % restingTicks == 0) && resting == true) {
+        resting = false; // reset resting state
+    }
+
+    if (!isAlive()) {
+        setTicksToNextMove(); // set ticks to next move
+        return; // do nothing
+    }
+
+    if (getX() == 60 && getY() == 60) {
+        setDead(); // if at exit, set dead
+        return;
+    }
+    if (hitPoints == 0)
+        this->setMustLeaveOilField(); // leave == true
+
+    if (leave == true) {
+        Direction d = sp->determineFirstMoveToExit(getX(), getY());
+        if (d == left) {
+            setDirection(left);
+            moveTo(getX() - 1, getY()); // move to exit
+        }
+        else if (d == right) {
+            setDirection(right);
+            moveTo(getX() + 1, getY()); // move to exit
+        }
+        else if (d == up) {
+            setDirection(up);
+            moveTo(getX(), getY() + 1); // move to exit
+        }
+        else if (d == down) {
+            setDirection(down);
+            moveTo(getX(), getY() - 1); // move to exit
+        }
+        return;
+    }
+
+    // if iceman is inline of sight, facing and within 4 squares = shout
+    if (sp->findNearbyIceMan(this, 4) != nullptr) {
+        if (sp->facingTowardIceMan(this)) {
+            if (shouted == false)
+                sp->playSound(SOUND_PROTESTER_YELL);
+            sp->getIceman()->annoy(2); // annoy iceman 2 points
+            shouted = true;
+        }
+    }
+
+    // if in line of sight, but not facing & more than 4 units away
+    if (sp->lineOfSightToIceMan(this, false)) {
+        if (sp->isNearIceMan(this, 4) == false) {
+            // turn to face iceman & move 1 forward
+            Direction d = sp->determineFirstMoveToIceMan(getX(), getY());
+            if (d == left) {
+                setDirection(left);
+                moveTo(getX() - 1, getY()); // move to exit
+            }
+            else if (d == right) {
+                setDirection(right);
+                moveTo(getX() + 1, getY()); // move to exit
+            }
+            else if (d == up) {
+                setDirection(up);
+                moveTo(getX(), getY() + 1); // move to exit
+            }
+            else if (d == down) {
+                setDirection(down);
+                moveTo(getX(), getY() - 1); // move to exit
+            }
+            numSquaresToMoveInCurrentDirection = 0; // new direction
+            return;
+        }
+    }
+
+    // if can't see
+    if (numSquaresToMoveInCurrentDirection <= 0) {
+        if (sp->canActorMoveTo(this, getX() - 1, getY()) && !(getDirection() == left)) // check if can move left
+            setDirection(left);
+        else if (sp->canActorMoveTo(this, getX() + 1, getY()) && !(getDirection() == right)) // check if can move right
+            setDirection(right);
+        else if (sp->canActorMoveTo(this, getX(), getY() + 1) && !(getDirection() == up)) // check if can move up
+            setDirection(up);
+        else if (sp->canActorMoveTo(this, getX(), getY() - 1) && !(getDirection() == down)) // check if can move down
+            setDirection(down);
+        else //last resort direction
+			setDirection(sp->determineFirstMoveToIceMan(getX(), getY())); // if cannot move in current direction, change direction
+		setSquaresToMoveInCurrentDirection(); // reset squares to move in current direction
+	}
+
+	// can move in current direction for numSquaresToMoveInCurrentDirection
+	if (moveToIfPossible(getX(), getY() + 1) && getDirection() == up) {
+		numSquaresToMoveInCurrentDirection--;
+	}
+	else if (moveToIfPossible(getX(), getY() - 1) && getDirection() == down) {
+		numSquaresToMoveInCurrentDirection--;
+	}
+	else if (moveToIfPossible(getX() - 1, getY()) && getDirection() == left) {
+		numSquaresToMoveInCurrentDirection--;
+	}
+	else if (moveToIfPossible(getX() + 1, getY()) && getDirection() == right) {
+		numSquaresToMoveInCurrentDirection--;
+	}
+    else {
+		// if cannot move, change direction
+		numSquaresToMoveInCurrentDirection = 0; // set squares to move in current direction
+    }
+
+    //if ()
+    //if (perpen == false)
+
+    if (sp->getTicks() % 15 == 0 && shouted == true) { // reset shout after 15 ticks
+        shouted = false;
+    }
 
 }
 
 //******************************** Hardcore Protester Methods *******************************
-HardcoreProtester::HardcoreProtester(StudentWorld* sp, int x, int y, int ID) :Protester(sp, x, y, IID_HARD_CORE_PROTESTER, 5, 0) {
+HardcoreProtester::HardcoreProtester(StudentWorld* sp, int x, int y) 
+    : Protester(sp, x, y, IID_HARD_CORE_PROTESTER, 5, 0) {
     cout << "hardcore protester ctor" << endl;
 
 }

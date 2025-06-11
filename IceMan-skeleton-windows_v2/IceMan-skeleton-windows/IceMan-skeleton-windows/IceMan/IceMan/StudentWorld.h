@@ -53,7 +53,7 @@ public:
     void giveIceManSonar();
     void giveIceManWater();
     bool facingTowardIceMan(Actor* a) const;
-    GraphObject::Direction lineOfSightToIceMan(Actor* a) const;
+    GraphObject::Direction lineOfSightToIceMan(Actor* a, bool facing) const;
     bool isNearIceMan(Actor* a, int radius) const;
     bool NearBoulder(int x, int y, int radius) const;
     GraphObject::Direction determineFirstMoveToExit(int x, int y);
@@ -112,6 +112,7 @@ private:
     int ticks = 1; // global variable to keep track of ticks
     int currentLevelNumber = 1;
 
+    vector<pair<int, int>> coords;
 };
 
 

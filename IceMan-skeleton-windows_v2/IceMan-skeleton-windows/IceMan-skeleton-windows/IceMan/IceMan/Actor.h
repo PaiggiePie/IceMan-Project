@@ -22,12 +22,12 @@ public:
     bool isAlive() const;
 
     // getWorld function to return the StudentWorld pointer
-    virtual void setWorld(StudentWorld*& sp) const;
+    void setWorld(StudentWorld*& sp) const;
     // Get this actor's world
     StudentWorld* getWorld() const { return sp; };
 
     // Mark this actor as dead.
-    void setDead();
+    virtual void setDead();
 
     // Annoy this actor.
     virtual bool annoy(unsigned int amt);
@@ -76,7 +76,7 @@ public:
 
 private:
     unsigned int hitPoints = 10;
-    bool m_isAlive;
+    bool m_isAlive = true;
 };
 
 
@@ -89,7 +89,7 @@ public:
     virtual void doSomething();
 
     virtual bool annoy(unsigned int amount);
-    void setDead();
+    void setDead() override;
     virtual bool canDigThroughIce() const;
     virtual void addGold();
     // Pick up a sonar kit.
@@ -149,25 +149,34 @@ public:
     // Set number of ticks until next move
     void setTicksToNextMove();
 
+    void setSquaresToMoveInCurrentDirection();
+protected:
+    bool leave = false; // starts off not leaving
+    bool shouted = false;
+	bool resting = false; // starts off not resting
+    int restingTicks = 0;
+    int numSquaresToMoveInCurrentDirection = 0;
+
+
 private:
     unsigned int m_gold = 0;
-    bool m_state = false; //starts off not giving up protest
 };
 
 
 class RegularProtester : public Protester {
 public:
-    RegularProtester(StudentWorld* sp, int x, int y, int ID);
+    RegularProtester(StudentWorld* sp, int x, int y);
     virtual void doSomething();
 
 private:
+    unsigned int hitPoints = 5; //starts with 5 hit points
 
 };
 
 class HardcoreProtester : public Protester {
 
 public:
-    HardcoreProtester(StudentWorld* sp, int x, int y, int ID);
+    HardcoreProtester(StudentWorld* sp, int x, int y);
     virtual void doSomething();
 
 
