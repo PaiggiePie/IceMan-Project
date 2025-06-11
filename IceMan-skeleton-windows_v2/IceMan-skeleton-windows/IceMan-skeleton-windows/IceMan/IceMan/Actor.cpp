@@ -127,7 +127,7 @@ void Iceman::doSomething() {
             if (d != right) {
                 setDirection(right);
             }
-            else if (getX() < 60) {
+            else if (getX() < 61) {
                 moveTo(getX() + 1, getY());
                 sp->clearIce(getX(), getY());
             }
@@ -137,7 +137,7 @@ void Iceman::doSomething() {
             if (d != up) {
                 setDirection(up);
             }
-            else if (getY() < 60) {
+            else if (getY() < 61) {
                 moveTo(getX(), getY() + 1);
                 sp->clearIce(getX(), getY());
             }
@@ -725,29 +725,26 @@ void Boulder::doSomething() {
         return; // if not alive, do nothing
     }
 
+
     if (sp->canActorMoveTo(this, getX(), getY() - 1) &&
         sp->canActorMoveTo(this, getX() + 1, getY() - 1) &&
         sp->canActorMoveTo(this, getX() + 2, getY() - 1) &&
-        sp->canActorMoveTo(this, getX() + 3, getY() - 1)) {
+        sp->canActorMoveTo(this, getX() + 3, getY() - 1) && fallingState == false) {
         // if boulder can fall, then it will fall after 30 ticks
         if (getWorld()->getTicks() % 30 == 0) {
             fallingState = true;
             sp->playSound(SOUND_FALLING_ROCK);
         }
-        else {
-            // if boulder cannot fall, then it will not do anything
-            return;
-
-
-        }
-
     }
     if (fallingState == true) {
-        if (getWorld()->canActorMoveTo(this, getX(), getY() - 1)) {
+        if (sp->canActorMoveTo(this, getX(), getY() - 1) &&
+            sp->canActorMoveTo(this, getX() + 1, getY() - 1) &&
+            sp->canActorMoveTo(this, getX() + 2, getY() - 1) &&
+            sp->canActorMoveTo(this, getX() + 3, getY() - 1)) {
             moveTo(getX(), getY() - 1);
             getWorld()->annoyAllNearbyActors(this, 100, 3); // annoy all nearby actors
         }
-        else if (getY() == -1) {
+        else {
             setDead();
         }
     }
@@ -767,7 +764,6 @@ void Squirt::doSomething() {
     if (!isAlive()) {
         return; // if not alive, do nothing
     }
-    
 
 
     if (sp->canActorMoveTo(this, getX(), getY() + 1) && getDirection() == up) {

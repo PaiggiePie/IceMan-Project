@@ -58,7 +58,7 @@ public:
     bool isNearIceMan(Actor* a, int radius) const;
     bool NearBoulder(int x, int y, int radius) const;
     bool NearItem(int x, int y, int radius) const;
-    bool atItem(int x, int y) const;
+    bool atItem(int x, int y, bool ice) const;
     GraphObject::Direction determineFirstMoveToExit(int x, int y);
     GraphObject::Direction determineFirstMoveToIceMan(int x, int y);
 

@@ -4,6 +4,7 @@
 #include <vector>
 #include <cmath>
 #include <random>
+#include <utility>
 #include <queue>
 using namespace std;
 
@@ -54,7 +55,7 @@ int StudentWorld::init() {
 				continue;
 			}
 			else {
-				if (!atItem(i, j)) {
+				if (!atItem(i, j, false)) {
 					Ice* iceObj = new Ice(sw, i, j);
 					iceField.push_back(iceObj);
 				}
@@ -64,7 +65,7 @@ int StudentWorld::init() {
 	}
 
 	// make static objects
-	int L = min(2 +currentLevelNumber, 21); // barrels of oil number
+	int L = min(2 + currentLevelNumber, 21); // barrels of oil number
 	for (int i = 0; i < L; i++) {
 		int x, y; // must be at (0,0) and (60, 56) inclusive
 		do {
@@ -74,18 +75,17 @@ int StudentWorld::init() {
 		BarrelsOfOil* barrel = new BarrelsOfOil(this, x, y);
 		aobj.push_back(barrel);
 	}
-	int G = max(5 - currentLevelNumber / 2, 2); 
-	for (int i = 0; i < G; i++) {
+	int K = max(5 - currentLevelNumber / 2, 2); 
+	for (int i = 0; i < K; i++) {
 		int x, y; // must be at (0,0) and (60, 56) inclusive
 		do {
 			x = rand() % 61; // random x coordinate
 			y = rand() % 57; // random y coordinate
 		} while (NearItem(x, y, 6)); // check if boulder is too close to another boulder
 	
-		GoldNugget* nugget = new GoldNugget(sw, (std::rand() % 59), (std::rand() % 57), false);
+		GoldNugget* nugget = new GoldNugget(sw, (std::rand() % 61), (std::rand() % 57), false);
 		aobj.push_back(nugget);
 	}
-	/*
 
 
 	RegularProtester* prot = new RegularProtester(sw);
@@ -98,7 +98,7 @@ int StudentWorld::move() {
 	//testing
 		/*int X = iceman->getX();
 		int Y = iceman->getY();
-		cout << X << ", " << Y << endl;*/
+		cout << X << ", " << Y << endl;
 	
 	/*cout << "Score: " << getScore() << endl;
 	cout << "Level: " << getLevel() << endl;
@@ -146,7 +146,7 @@ int StudentWorld::move() {
 			do {
 				x = rand() % 61; // random x coordinate
 				y = rand() % 61; // random y coordinate
-			} while (NearItem(x, y, 6)); // check if boulder is too close to another boulder
+			} while ((!atItem(x, y, true)) && !NearItem(x, y, 6)); // check if boulder is too close to another boulder
 			WaterPool* pool = new WaterPool(this, x, y); // random iceless spot
 			aobj.push_back(pool);
 		}
@@ -314,7 +314,7 @@ void StudentWorld::revealAllNearbyObjects(int x, int y, int radius) {
 			actor->setVisible(true); // reveal the actor
 		}
 		for (auto& ice : iceField) {
-			if (isNearIceMan(ice, radius)) {
+			if (isNearIceMan(ice, radius) && ice->isVisible() == true) {
 				ice->setVisible(true); // reveal the ice
 			}
 		}
@@ -552,40 +552,182 @@ bool StudentWorld::NearItem(int x, int y, int radius) const {
 	return false;
 }
 
-bool StudentWorld::atItem(int x, int y) const {
+bool StudentWorld::atItem(int x, int y, bool ice) const { // if you need to check ice, ice == true, boulders = false
 	bool onit = false;
 	for (int i = 0; i < iceField.size(); i++) {
-		if (iceField[i]->getID() == IID_BOULDER) {
-			if ((iceField[i]->getX() == x || iceField[i]->getX() == x + 1
-				|| iceField[i]->getX() == x + 2 || iceField[i]->getX() == x + 3)
-				&& iceField[i]->getY() == y) {
-				return true; // if item is at x, y, return true
-			}
-			else if ((iceField[i]->getX() == x || iceField[i]->getX() == x + 1
-				|| iceField[i]->getX() == x + 2 || iceField[i]->getX() == x + 3)
-				&& iceField[i]->getY() == y + 1)
+		if ((iceField[i]->getX() == x || iceField[i]->getX() == x - 1
+			|| iceField[i]->getX() == x - 2 || iceField[i]->getX() == x - 3)
+			&& iceField[i]->getY() == y) {
+			if (iceField[i]->getID() == IID_ICE && ice == false) // if is ice and not checking ice,
+				continue; // if item is at x, y, return true
+			else
 				return true;
-			else if ((iceField[i]->getX() == x || iceField[i]->getX() == x + 1 ||
-				iceField[i]->getX() == x + 2 || iceField[i]->getX() == x + 3)
-				&& iceField[i]->getY() == y + 2)
+		}
+		else if ((iceField[i]->getX() == x || iceField[i]->getX() == x - 1
+			|| iceField[i]->getX() == x - 2 || iceField[i]->getX() == x - 3)
+			&& iceField[i]->getY() == y - 1) {
+			if (iceField[i]->getID() == IID_ICE && ice == false) // if is ice and not checking ice,
+				continue; // if item is at x, y, return true
+			else
 				return true;
-			else if ((iceField[i]->getX() == x || iceField[i]->getX() == x + 1 ||
-				iceField[i]->getX() == x + 2 || iceField[i]->getX() == x + 3)
-				&& iceField[i]->getY() == y + 3)
+		}
+		else if ((iceField[i]->getX() == x || iceField[i]->getX() == x - 1 ||
+			iceField[i]->getX() == x - 2 || iceField[i]->getX() == x - 3)
+			&& iceField[i]->getY() == y - 2) {
+			if (iceField[i]->getID() == IID_ICE && ice == false) // if is ice and not checking ice,
+				continue; // if item is at x, y, return true
+			else
+				return true;
+		}
+		else if ((iceField[i]->getX() == x || iceField[i]->getX() == x - 1 ||
+			iceField[i]->getX() == x - 2 || iceField[i]->getX() == x - 3)
+			&& iceField[i]->getY() == y - 3) {
+			if (iceField[i]->getID() == IID_ICE && ice == false) // if is ice and not checking ice,
+				continue; // if item is at x, y, return true
+			else
 				return true;
 		}
 	}
 	return false;
 }
 
+struct TreeNode {
+	GraphObject::Direction fromParent; // The direction taken to get to this node from the parent
+	TreeNode* parent;
+	int x, y;
+	//int steps;
+	TreeNode(int x, int y, GraphObject::Direction dir, TreeNode* parent = nullptr)
+		: x(x), y(y), fromParent(dir), parent(parent) {
+	}
+};
+
+
 GraphObject::Direction StudentWorld::determineFirstMoveToExit(int x, int y) {
-	return GraphObject::Direction::none; // placeholder, implement logic to determine first move to exit
+	const int goalX = 60;
+	const int goalY = 60;
+
+	std::queue<TreeNode*> q;
+	bool visited[64][64] = { false };
+
+	// Root node: the protester's current location
+	TreeNode* root = new TreeNode(x, y, GraphObject::none);
+	//root to track exit
+	TreeNode* exitNode = nullptr;
+	visited[x][y] = true;
+	q.push(root);
+
+	// stores 4 directions
+	vector<tuple<int, int, GraphObject::Direction>> directions = { {0, 1, GraphObject::up   },
+																	{0, -1, GraphObject::down},
+																	{-1, 0, GraphObject::left},
+																	{1, 0, GraphObject::right} };
+	while (!q.empty()) {
+		//root to track current/nodes in the queue
+		TreeNode* curr = q.front();
+		q.pop();
+
+		int cX = curr->x;
+		int cY = curr->y;
+
+		//at exit
+		if (cX == goalX && cY == goalY) {
+			exitNode = curr;
+			break;
+		}
+
+		//check if valid for each direction for current place
+		for (auto [dX, dY, dir] : directions) {
+			int nextX = cX + dX;
+			int nextY = cY + dY;
+
+			if (canActorMoveTo(iceman, nextX, nextY) && !visited[nextX][nextY]) {
+				//if valid put on queue
+				visited[nextX][nextY] = true;
+				TreeNode* child = new TreeNode(nextX, nextY, dir, curr);
+				q.push(child);
+			}
+		}
+	}
+
+	if (exitNode != nullptr) {
+		TreeNode* path = exitNode;
+		GraphObject::Direction dirToMove = GraphObject::none;
+		//for length of path, go through path
+		while (path->parent != nullptr && path->parent != root) {
+			path = path->parent;
+		}
+		if (path->parent == root)
+			dirToMove = path->fromParent;
+		return dirToMove;
+	}
+	return GraphObject::none;
 }
 
+
+
+// Determine the direction of the first move a hardcore protester
+// makes to approach the IceMan.
 GraphObject::Direction StudentWorld::determineFirstMoveToIceMan(int x, int y) {
-	return GraphObject::Direction::none; // placeholder, implement logic to determine first move to exit
+	const int goalX = iceman->getX();
+	const int goalY = iceman->getY();
 
+	std::queue<TreeNode*> q;
+	bool visited[64][64] = { false };
+
+	// Root node: the protester's current location
+	TreeNode* root = new TreeNode(x, y, GraphObject::none);
+	//root to track exit
+	TreeNode* exitNode = nullptr;
+	visited[x][y] = true;
+	q.push(root);
+
+	// stores 4 directions
+	vector<tuple<int, int, GraphObject::Direction>> directions = { {0, 1, GraphObject::up   },
+																	{0, -1, GraphObject::down},
+																	{-1, 0, GraphObject::left},
+																	{1, 0, GraphObject::right} };
+	while (!q.empty()) {
+		//root to track current/nodes in the queue
+		TreeNode* curr = q.front();
+		q.pop();
+
+		int cX = curr->x;
+		int cY = curr->y;
+
+		//at exit
+		if (cX == goalX && cY == goalY) {
+			exitNode = curr;
+			break;
+		}
+
+		//check if valid for each direction for current place
+		for (auto [dX, dY, dir] : directions) {
+			int nextX = cX + dX;
+			int nextY = cY + dY;
+
+			if (canActorMoveTo(iceman, nextX, nextY) && !visited[nextX][nextY]) {
+				//if valid put on queue
+				visited[nextX][nextY] = true;
+				TreeNode* child = new TreeNode(nextX, nextY, dir, curr);
+				q.push(child);
+			}
+		}
+	}
+
+	if (exitNode != nullptr) {
+		TreeNode* path = exitNode;
+		GraphObject::Direction dirToMove = GraphObject::none;
+		//for length of path, go through path
+		while (path->parent != nullptr && path->parent != root) {
+			path = path->parent;
+		}
+		if (path->parent == root)
+			dirToMove = path->fromParent;
+		return dirToMove;
+	}
+	return GraphObject::none;
 }
+
 
 
 
