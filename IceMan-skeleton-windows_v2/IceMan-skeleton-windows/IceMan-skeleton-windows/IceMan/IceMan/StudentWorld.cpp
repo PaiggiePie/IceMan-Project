@@ -437,6 +437,15 @@ bool StudentWorld::nearBoulder(int x, int y, int radius) const {
     return false;
 }
 
+struct TreeNode{
+    GraphObject::Direction fromParent; // The direction taken to get to this node from the parent
+    TreeNode* parent;
+    int x, y;
+    //int steps;
+    TreeNode(int x, int y, GraphObject::Direction dir, TreeNode* parent = nullptr)
+            : x(x), y(y), fromParent(dir), parent(parent) {}
+};
+
   // Determine the direction of the first move a quitting protester
   // makes to leave the oil field.
 GraphObject::Direction StudentWorld::determineFirstMoveToExit(int x, int y){
