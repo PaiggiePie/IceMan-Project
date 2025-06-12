@@ -1,650 +1,267 @@
-#include "Actor.h"
-#include "StudentWorld.h"
-
-
-//******************************** Actor Methods *******************************
-
-//contructor
-Actor::Actor(StudentWorld* sp, int ID, int x, int y, Direction dir, double siz, unsigned int dep, bool visible):
-GraphObject(ID, x, y, dir, siz, dep), sp (sp){
-    sp->setWorld(sp); // set the world pointer
-}
-
-Actor::~Actor() {
-    //cout << "Actor dtor" << endl;
-    setVisible(false);
-    m_isAlive = false; // set alive to false when actor is destroyed
-    // remove from the set of graph objects
-    getGraphObjects(getAnimationNumber()).erase(this);
-}
-
-StudentWorld* Actor::getWorld() const{
-    return sp;
-}
-bool Actor::isAlive() const{
-    return m_isAlive;
-}
-
-
-void Actor::setDead(){
-    m_isAlive = false;
-}
-
-bool Actor::annoy(unsigned int amt){
-    return false;
-}
-
-bool Actor::huntsIceMan() const{
-    return true;
-
-}
-bool Actor::canDigThroughIce() const{
-    return false;
-}
-
-bool Actor::canActorsPassThroughMe() const{
-    return false;
-}
-
-bool Actor::canPickThingsUp() const{
-    return false;
-}
-
-bool Actor::needsToBePickedUpToFinishLevel() const{
-    return false;
-}
-bool Actor::moveToIfPossible(int x, int y) {
-    if (getWorld()->canActorMoveTo(this, x, y)) {
-        return true; // cannot move to the specified location
-    }
-    return false;
-}
-
-
-
-//******************************** Agent Methods *******************************
-Agent::Agent(StudentWorld* sp, int ID, int x, int y, Direction dir,
-             unsigned int hitPoints) : Actor(sp, IID_PLAYER, 30, 60, right, 1.0, 0, true){
-    getGraphObjects(0).insert(this);
-}
-
-bool Agent::annoy(unsigned int amount){
-    hitPoints -= amount;
-    if (hitPoints == 0){
-        setDead();
-        return false;
-    }
-    return true;
-}
-
-bool Agent::canDigThroughIce() const{
-    return false;
-}
-
-
-bool Agent::canPickThingsUp() const{
-    return true;
-}
-
-unsigned int Agent::getHitPoints() const{
-    return hitPoints;
-}
-//******************************** IceMan Methods *******************************
-
-Iceman::Iceman(StudentWorld* sp): Agent(sp, IID_PLAYER, 30, 60, right, 5){ //contructor
-    getGraphObjects(0).insert(this);
-    setVisible(true);
-    sp->setIceman(this);
-    //cout << "iceman ctor" << endl;
-}
-
-void Iceman::setDead(){
-    if (sp){
-        if (sp->getLives() == 0){
-            m_isAlive = false;
-            sp->playSound(SOUND_PLAYER_GIVE_UP);
-        }
-    }
-}
-
-
-void Iceman::doSomething(){
-    if (getWorld(sp) == nullptr) {
-            cerr << "Error: StudentWorld pointer is null!" << endl;
-            return; // handle the error as needed
-        }
-    
-    Direction d = this->getDirection();
-    int key;
-    if (getWorld(sp)->getKey(key) == true) {
-        switch (key) {
-            case KEY_PRESS_LEFT:
-                if (d != left) {
-                    setDirection(left);
-                }
-                else if (getX() > 0) {
-                    moveTo(getX() - 1, getY());
-                }
-                sp->clearIce(getX(), getY());
-                break;
-            case KEY_PRESS_RIGHT:
-                if (d != right) {
-                    setDirection(right);
-                }
-                else if (getX() < 61) {
-                    moveTo(getX() + 1, getY());
-                }
-                sp->clearIce(getX(), getY());
-                break;
-            case KEY_PRESS_UP:
-                if (d != up) {
-                    setDirection(up);
-                } 
-                else if (getY() < 61) {
-                    moveTo(getX(), getY() + 1);
-                }
-                sp->clearIce(getX(), getY());
-                break;
-            case KEY_PRESS_DOWN:
-                if (d != down) {
-                    setDirection(down);
-                }
-                else if (getY() > 0) {
-                    moveTo(getX(), getY() - 1);
-                }
-                sp->clearIce(getX(), getY());
-                break;
-            case KEY_PRESS_TAB:
-                //add gold into field if iceman has gold
-                if (m_gold > 0){
-                    m_gold--;
-                    GoldNugget* g = new GoldNugget(sp, getX(), getY(), true);
-                    g->doSomething();
-                    
-                }
-                break;
-            case KEY_PRESS_SPACE:
-                if (m_squirts > 0){
-                    sp->playSound(SOUND_PLAYER_SQUIRT);
-                    if (d == up){
-                        m_squirts--;
-                        Squirt* s = new Squirt(sp, getX(), getY()+4, up);
-                        s->doSomething();
-
-                    } else if (d == down){
-                        m_squirts--;
-                        Squirt* s = new Squirt(sp,getX(), getY()-4, down);
-                        s->doSomething();
-
-                    } else if (d == right){
-                        m_squirts--;
-                        Squirt* s = new Squirt(sp, getX()+4, getY(), right);
-                        s->doSomething();
-
-                    } else if (d == left){
-                        m_squirts--;
-                        Squirt* s = new Squirt(sp, getX()-4, getY(), left);
-                        s->doSomething();
-                    }
-                }
-                break;
-            case KEY_PRESS_ESCAPE:
-                //decrement life
-                if (sp){
-                    sp->decLives();
-                }
-                setDead();
-                break;
-            case 'Z':
-                if(m_sonar>0){
-                    m_sonar--;
-                    sp->playSound(SOUND_SONAR);
-                    //use sonar if available
-                    getWorld()->revealAllNearbyObjects(getX(), getY(), 60);
-                }
-                break;
-            case 'z':
-                if(m_sonar>0){
-                    m_sonar--;
-                    sp->playSound(SOUND_SONAR);
-                    getWorld()->revealAllNearbyObjects(getX(), getY(), 60);
-
-                }
-                break;
-        }
-        
-    }
-}
-
-bool Iceman::annoy(unsigned int amount){
-    if(getHitPoints() >= 1){
-        Agent::annoy(amount);
-        return true;
-    }
-    setDead();
-    return false;
-}
-
-bool Iceman::canDigThroughIce() const{
-    return true;
-}
-
-void Iceman::addGold(){
-    m_gold++;
-}
-
-
-void Iceman::addSonar(){
-    sp->increaseScore(75);
-    m_sonar+=1;
-}
-
-  // Pick up water.
-void Iceman::addWater(){
-    sp->increaseScore(100);
-    m_squirts+=5;
-}
-
-  // Get amount of gold
-unsigned int Iceman::getGold() const{
-    return m_gold;
-}
-
-  // Get amount of sonar charges
-unsigned int Iceman::getSonar() const{
-    return m_sonar;
-}
-
-  // Get amount of water
-unsigned int Iceman::getWater() const{
-    return m_squirts;
-}
-
-Iceman::~Iceman(){
-    setVisible(false);
-    Iceman::getGraphObjects(0).erase(this);
-}
-
-
-
-//******************************** Protester Methods *******************************
-Protester::Protester(StudentWorld* sp, int x, int y, int ID, unsigned int hitPoints, unsigned int score): Agent(sp, IID_PROTESTER, x, y , left, 5){
-    setVisible(true);
-}
-void Protester::doSomething(){
-    
-}
-
-bool Protester::annoy(unsigned int amount){
-    return true;
-}
-
-void Protester::addGold(){
-    m_gold++;
-}
-
-bool Protester::huntsIceMan() const{
-    return true;
-}
-
-  // Set state to having given up protest
-void Protester::setMustLeaveOilField(){
-    m_state = true;
-}
-
-  // Set number of ticks until next move
-void Protester::setTicksToNextMove(){
-   // sp->ticks = 0;
-    //int ticks = getWorld()->getTicks();
-}
-
-Protester::~Protester(){
-    int ticks = getWorld()->getTicks();
-    Protester::getGraphObjects(0).erase(this);
-}
-
-
-//******************************** Regular Protester Methods *******************************
-RegularProtester::RegularProtester(StudentWorld* sp, int x, int y, int ID): Protester(sp, x, y, IID_PROTESTER, 5, 0){
-    
-}
-
-void RegularProtester::doSomething(){
-    
-}
-
-void RegularProtester::addGold(){
-    Protester::addGold();
-}
-bool RegularProtester::annoy(unsigned int amount){
-    return true;
-}
-
-RegularProtester::~RegularProtester(){
-    setVisible(false);
-    RegularProtester::getGraphObjects(0).erase(this);
-}
-
-//******************************** Hardcore Protester Methods *******************************
-HardcoreProtester::HardcoreProtester(StudentWorld* sp, int x, int y, int ID):Protester(sp, x, y, IID_HARD_CORE_PROTESTER, 5, 0){
-    
-}
-
-void HardcoreProtester::doSomething(){
-    
-}
-
-void HardcoreProtester::addGold(){
-    Protester::addGold();
-}
-
-bool HardcoreProtester::annoy(unsigned int amount){
-    return true;
-}
-
-HardcoreProtester::~HardcoreProtester(){
-    setVisible(false);
-    HardcoreProtester::getGraphObjects(0).erase(this);
-}
-
-//******************************** Ice Methods *******************************
-
-//constructor
-Ice::Ice(StudentWorld* sp): Actor(sp, IID_ICE, getX() , getY(), right, 0.25, 3, true){
-    //cout << "Ice ctor" << endl;
-    setVisible(true);
-    // add to the set of graph objects
-    getGraphObjects(3).insert(this);
-}
-
-Ice::~Ice(){
-    //cout << "Ice dtor" << endl;
-    setVisible(false);
-    Ice::getGraphObjects(3).erase(this); // remove from the set of graph objects
-}
-
-void Ice::doSomething(){
-        // Ice does not perform any actions
-}
-
-//******************************** Boulder Methods *******************************
-Boulder::Boulder(StudentWorld* sp): Actor(sp, IID_BOULDER, getX(), getY(), down, 1.0, 1, true){
-    setVisible(true);
-}
-
-bool Boulder::canActorsPassThroughMe() const{
-    return false;
-}
-
-void Boulder::doSomething(){
-    // if there is not ice below the boulder in 2x2 square, it can fall ie.
-    if (getWorld()->canActorMoveTo(this, getX(), getY() - 1) &&
-        getWorld()->canActorMoveTo(this, getX() + 1, getY() - 1) &&
-        getWorld()->canActorMoveTo(this, getX() + 2, getY() - 1) &&
-        getWorld()->canActorMoveTo(this, getX() + 3, getY() - 1)) {
-        // if boulder can fall, then it will fall after 30 ticks
-        if (getWorld()->getTicks() % 30 == 0) {
-            fallingState = true;
-            getWorld()->playSound(SOUND_FALLING_ROCK);
-        }
-        else {
-            // if boulder cannot fall, then it will not do anything
-            return;
-            
-            
-        }
-        
-        
-    }
-    if (fallingState == true) {
-        if (getWorld()->canActorMoveTo(this, getX(), getY() - 1)) {
-            moveTo(getX(), getY() - 1);
-            getWorld()->annoyAllNearbyActors(this, 100, 3); // annoy all nearby actors
-        }
-        else if (getY() == -1) {
-            setDead();
-        }
-    }
-}
-
-
-Boulder::~Boulder(){
-    setVisible(false);
-    Boulder::getGraphObjects(1).erase(this);
-}
-
-//******************************** Squirt Methods *******************************
-
-Squirt::Squirt(StudentWorld* sp, int x, int y, Direction dir): Actor(sp, IID_WATER_SPURT, x, y, dir, 1.0, 1, false){
-    //let doSomething decide if it should appear
-    sp->addActor(this);
-    setVisible(false);
-
-}
-
-void Squirt::doSomething(){
-    setVisible(true);
-    if (moveToIfPossible(getX(), getY() + 4) && getDirection() == up) {
-        if (!sp->nearBoulder(getX(), getY() + 4, 3))
-            moveTo(getX(), getY() + 4);
-        sp->playSound(SOUND_PLAYER_SQUIRT);
-    }
-    else if (moveToIfPossible(getX(), getY() - 4) && getDirection() == down) {
-        if (!sp->nearBoulder(getX(), getY() - 4, 3))
-            moveTo(getX(), getY() - 4);
-        sp->playSound(SOUND_PLAYER_SQUIRT);
-    }
-    else if (moveToIfPossible(getX() - 4, getY()) && getDirection() == left) {
-        if (!sp->nearBoulder(getX() -4, getY(), 3))
-            moveTo(getX() - 4, getY());
-        sp->playSound(SOUND_PLAYER_SQUIRT);
-    }
-    else if (moveToIfPossible(getX() + 4, getY()) && getDirection() == right) {
-        if (!sp->nearBoulder(getX() + 4, getY(), 3))
-            moveTo(getX() + 4, getY());
-        sp->playSound(SOUND_PLAYER_SQUIRT);
-    }
-    else {
-        setDead();
-        return;
-    }
-}
-
-Squirt::~Squirt(){
-    setVisible(false);
-    GoldNugget::getGraphObjects(1).erase(this);
-}
-
-
-
-//******************************** ActivatingObj Methods *******************************
-ActivatingObject::ActivatingObject(StudentWorld* sp, int x, int y, int ID,
-    int soundToPlay, bool activateOnPlayer, bool activateOnProtester, bool initallyActive):
-Actor(sp, ID, x, y, right, 1.0, 2, true), m_soundToPlay(soundToPlay),
-m_activateOnPlayer(activateOnPlayer), m_activateOnProtester(activateOnProtester),
-m_initiallyActive(initallyActive)
+#ifndef ACTOR_H_
+#define ACTOR_H_
+#include <cstdlib>
+#include <cmath>
+#include <random>
+#include "GraphObject.h"
+class StudentWorld;
+
+using namespace std;
+
+// Students:  Add code to this file, Actor.cpp, StudentWorld.h, and StudentWorld.cpp
+class Actor : public GraphObject {
+public:
+
+    virtual void doSomething() = 0;
+    //parametized constructor
+    Actor(StudentWorld* sp, int ID, int x, int y, Direction dir, double siz, unsigned int dep, bool visible);
+
+    virtual ~Actor();
+
+    //returns true if actor is alive
+    bool isAlive() const;
+
+    // getWorld function to return the StudentWorld pointer
+    void setWorld(StudentWorld*& sp) ;
+    // Get this actor's world
+    StudentWorld* getWorld() const { return sp; };
+
+    // Mark this actor as dead.
+    virtual void setDead();
+
+    // Annoy this actor.
+    virtual bool annoy(unsigned int amt);
+
+    // Can this actor dig through Ice?
+    virtual bool canDigThroughIce() const;
+
+    // Can other actors pass through this actor?
+    virtual bool canActorsPassThroughMe() const;
+
+    // Can this actor pick items up?
+    virtual bool canPickThingsUp() const;
+
+    // Does this actor hunt the IceMan?
+    virtual bool huntsIceMan() const;
+
+    // Can this actor need to be picked up to finish the level?
+    virtual bool needsToBePickedUpToFinishLevel() const;
+
+    // Move this actor to x,y if possible, and return true; otherwise,
+    // return false without moving.
+    bool moveToIfPossible(int x, int y);
+
+protected:
+    // current level number, used for calculating ticks to wait between moves for protester
+        //int currentLevelNumber = sp->getLevel();
+    StudentWorld* sp = nullptr;
+
+private:
+    bool m_isAlive = true; // alive or dead
+};
+
+class Agent : public Actor {
+public:
+    Agent(StudentWorld* sp, int ID, int x, int y, Direction dir,
+        unsigned int hitPoints);
+    virtual bool annoy(unsigned int amount);
+    //void setDead() { m_isAlive = false; }
+    // Pick up a gold nugget.
+    virtual void addGold() = 0;
+    virtual bool canDigThroughIce() const;
+    // How many hit points does this actor have left?
+    unsigned int getHitPoints() const;
+    virtual bool leavingOilField() { return false; }
+    virtual bool canPickThingsUp() const;
+
+protected:
+    unsigned int hitPoints =100;
+};
+
+
+
+class Iceman : public Agent {
+public:
+
+    //contructor declaration
+    Iceman(StudentWorld* sp);
+    virtual void doSomething() override;
+
+    virtual bool annoy(unsigned int amount) override;
+    //void setDead() override;
+    virtual bool canDigThroughIce() const override;
+    virtual void addGold() override;
+    // Pick up a sonar kit.
+    void addSonar();
+
+    // Pick up water.
+    void addWater();
+
+    // Get amount of gold
+    unsigned int getGold() const;
+
+    // Get amount of sonar charges
+    unsigned int getSonar() const;
+
+    // Get amount of water
+    unsigned int getWater() const;
+    ~Iceman() override;
+private:
+    unsigned int m_hits = 10;
+    unsigned int m_squirts = 5;
+    unsigned int m_sonar = 1;
+    unsigned int m_gold = 0;
+    //StudentWorld* sp = nullptr;
+
+};
+
+
+class Ice : public Actor {
+public:
+
+    //contructor declaration
+    Ice(StudentWorld* sp, int x, int y);
+    virtual void doSomething() override;
+
+};
+
+
+
+
+//******************************** Protestors *******************************
+class Protester : public Agent {
+
+public:
+    Protester(StudentWorld* sp, int ID, unsigned int hitPoints, unsigned int score);
+    virtual void doSomething() override;
+    virtual bool annoy(unsigned int amount) override;
+    virtual void addGold() override;
+    unsigned int getGold() const { return m_gold; } // getter for gold
+    virtual bool huntsIceMan() const override;
+
+    // Set state to having gien up protest
+    void setMustLeaveOilField();
+    bool leavingOilField() const { return leave; } // getter for leave state
+
+    // Set number of ticks until next move
+    void setTicksToNextMove();
+    void setSquaresToMoveInCurrentDirection();
+
+protected:
+    bool leave = false; // starts off not leaving
+    bool shouted = false;
+    int shoutTicks=0;
+    bool resting = false; // starts off not resting
+    int restingTicks = 0;
+    int perpenTicks = 0; // number of ticks since last perpendicular turn
+    int numSquaresToMoveInCurrentDirection = 30;
+    unsigned int m_gold = 0;
+};
+
+
+class RegularProtester : public Protester {
+public:
+    RegularProtester(StudentWorld* sp);
+    virtual void doSomething();
+
+};
+
+class HardcoreProtester : public Protester {
+
+public:
+    HardcoreProtester(StudentWorld* sp);
+    virtual void doSomething() override;
+    void addGold() override;
+};
+
+
+class Boulder : public Actor {
+public:
+    Boulder(StudentWorld* sp, int x, int y);
+    virtual bool canActorsPassThroughMe() const;
+    virtual void doSomething();
+
+private:
+    bool fallingState = false; // starts off not falling
+};
+
+class Squirt : public Actor
 {
-    setVisible(false);
-}
-
-//will only be used by barrels of oil. all other objects use Actor::needsToBePickedUpToFinishLevel()
-bool ActivatingObject::needsToBePickedUpToFinishLevel() const{
-    return false;
-}
-
-bool ActivatingObject::canActorsPassThroughMe() const{
-    return true;
-}
-
-void ActivatingObject::setTicksToLive(){
-    //int math = 0;
-    int math = 300 - (10 * sp->getLevel());
-    ticksToLive = max(100, math);
-}
-
-ActivatingObject::~ActivatingObject(){
-    setVisible(false);
-    getGraphObjects(getAnimationNumber()).erase(this);
-}
-
-//******************************** Oil Methods *******************************
-BarrelsOfOil::BarrelsOfOil(StudentWorld* sp): ActivatingObject(sp, (rand() % 64), (rand() % 59), IID_BARREL, SOUND_FOUND_OIL, true, false, false){
-    getGraphObjects(2).insert(this);
-    //cout << "Barrels of Oil ctor" << endl;
-}
-
-void BarrelsOfOil::doSomething(){
-    if (isAlive()) {
-        if (isVisible() == false && sp->findNearbyIceMan(this, 4)  != nullptr) { // if not visible and iceman is in radius 4
-            setVisible(true); // make visible
-            return;
-        }
-        if (sp->findNearbyIceMan(this, 3) != nullptr) {
-            //cout << "barrel picked up" << endl;
-            sp->playSound(SOUND_FOUND_OIL); // play sound
-            sp->increaseScore(1000); // increase score by 10
-            setDead(); // if iceman is in radius 3, set dead
-            //if (!isAlive())
-            //    cout << "barrel picked up" << endl;
-            return;
-        }
-    }
-}
-
-bool BarrelsOfOil::needsToBePickedUpToFinishLevel() const {
-    return true;
-}
-
-BarrelsOfOil::~BarrelsOfOil() {
-    setVisible(false);
-    BarrelsOfOil::getGraphObjects(2).erase(this); // remove from the set of graph objects
-}
-
-//******************************** Gold Nuggets Methods *******************************
-GoldNugget::GoldNugget(StudentWorld* sp, int x, int y, bool temporary): ActivatingObject(sp, x, y, IID_GOLD, SOUND_GOT_GOODIE, true, true, true){
-    //setVisible(true);
-    //sp->addObj(this);
-
-}
-
-void GoldNugget::doSomething(){
-    if (isAlive() == false) {
-        return; // if not alive, do nothing
-    }
-    
-    if (isVisible() == false && (getWorld()->findNearbyIceMan(this, 4) != nullptr)) { // if not visible and iceman is in radius 4
-        setVisible(true); // make visible
-        
-        return;
-    }
-    Agent* a = getWorld()->findNearbyPickerUpper(this, 3);
-    // find nearby protester or iceman
-    if(a){
-        if (a->getID() == IID_PLAYER && temporary == true) {
-            this->setDead(); // if iceman is in radius 3, set dead
-            getWorld()->playSound(SOUND_GOT_GOODIE); // play sound
-            a->addGold(); // add gold to iceman inventory
-            getWorld()->increaseScore(10); // increase score by 10
-            return;
-        }
-        
-        else if ((a->getID() == IID_PROTESTER || a->getID() == IID_HARD_CORE_PROTESTER) && temporary == false) {
-            a->addGold(); // add gold to protester inventory
-            this->setDead(); // if protester is in radius 3, set dead
-            getWorld()->playSound(SOUND_PROTESTER_FOUND_GOLD); // play sound
-            getWorld()->increaseScore(25); // increase score by 25
-            return;
-        }
-    }
-    if (temporary == true) {
-        // if temporary, set dead after 100 ticks
-        if (getWorld()->getTicks() % 100 == 0) {
-            setDead();
-        }
-    }
-}
-        
-            
-
-GoldNugget::~GoldNugget(){
-    setVisible(false);
-    GoldNugget::getGraphObjects(2).erase(this);
-}
-
-void GoldNugget::setTicksToLive() {
-    int ticks = sp->getTicks();
-
-    if (sp->getTicks() < 0) {
-        lifetime = 2000;
-    }
-    else {
-        lifetime = ticks + 2000; // set lifetime to 800 ticks
-    }
-}
+public:
+    Squirt(StudentWorld* sp, int x, int y, Direction dir, int m_distance);
+    virtual void doSomething();
+private:
+    int m_distance=4;
+};
 
 
-//******************************** Water Pool Methods *******************************
-WaterPool::WaterPool(StudentWorld* sp): ActivatingObject(sp, (rand() % 64), (rand() % 59), IID_WATER_POOL, SOUND_GOT_GOODIE, true, false, false){
-    
-}
+//******************************** Activating Objects *******************************
 
-void WaterPool::doSomething(){
-    if (isAlive()) {
-        if (lifetime == -1) {
-            setTicksToLive(); // set lifetime if not set
-        }
-        if (sp->getTicks() == lifetime) {
-            setDead(); // set dead after lifetime
-            lifetime = -1; // reset lifetime
-        }
-        if (getWorld()->findNearbyIceMan(this, 3)) {
-            sp->playSound(SOUND_GOT_GOODIE); // play sound
-            sp->getIceman()->addWater(); // add water to iceman inventory
-            sp->increaseScore(100); // increase score by 50
-            setDead(); // set dead
-        }
-    }
-}
+class ActivatingObject : public Actor
+{
+public:
+    ActivatingObject(StudentWorld* sp, int x, int y, int ID,
+        int soundToPlay, bool activateOnPlayer,
+        bool activateOnProtester, bool initallyActive);
+    ~ActivatingObject();
+    bool needsToBePickedUpToFinishLevel() const;
+    // Set number of ticks until this object dies
+    bool canActorsPassThroughMe() const;
+    virtual void setTicksToLive();
+    virtual void doSomething() = 0;
+    // Getters for member variables
+    bool activateOnPlayer() const { return m_activateOnPlayer; }
+    bool activateOnProtester() const { return m_activateOnProtester; }
+    bool isInitiallyActive() const { return m_initiallyActive; }
 
-WaterPool::~WaterPool(){
-    setVisible(false);
-    WaterPool::getGraphObjects(2).erase(this);
-}
-    
-//******************************** SonarKit Methods *******************************
-SonarKit::SonarKit(StudentWorld* sp): ActivatingObject(sp, 0, 60, IID_SONAR, SOUND_GOT_GOODIE, true, false, false){
-    
-}
+protected:
+    int lifetime = -1;
+    int trackTick = -1;
+private:
+    int ticksToLive = 0; // number of ticks until this object dies
+    int m_soundToPlay = SOUND_NONE; // sound to play when this object is activated
+    bool m_activateOnPlayer; // true if this object activates on player, false otherwise
+    bool m_activateOnProtester; // true if this object activates on protester, false otherwise
+    bool m_initiallyActive; // true if this object is initially active, false otherwise
+};
 
-void SonarKit::doSomething(){
-   if (isAlive()) {
-        if (lifetime == -1) {
-            setTicksToLive();
-        }
-        if (sp->getTicks() == lifetime) {
-            setDead();
-            lifetime = -1; // reset lifetime
-        }
-        if (sp->findNearbyIceMan(this, 3)) {
-            sp->playSound(SOUND_GOT_GOODIE);
-            sp->getIceman()->addSonar(); // add sonar to iceman inventory
-            sp->increaseScore(75); // increase score by 75
-            setDead();
-        }
-    }
-    else {
-        return; // if not alive, do nothing
-    }
-}
+class BarrelsOfOil : public ActivatingObject {
+public:
+    BarrelsOfOil(StudentWorld* sp, int x, int y);
+    virtual void doSomething();
+    virtual bool needsToBePickedUpToFinishLevel() const;
+    ~BarrelsOfOil();
+};
 
-void SonarKit::setTicksToLive() {
-    int currentLevelNumber = sp->getLevel();
-    int T = max(100, 300 - 10 * currentLevelNumber);
-    lifetime = sp->getTicks() + T; // set lifetime to T ticks
-}
+class GoldNugget : public ActivatingObject { // ghost block
+public:
+    GoldNugget(StudentWorld* sp, int x, int y, bool temporary);
+    virtual void doSomething();
+    void setTicksToLive();
+
+private:
+    bool temporary = false; // true if temporary, false if permanent
+
+};
 
 
-SonarKit::~SonarKit(){
-    setVisible(false);
-    SonarKit::getGraphObjects(2).erase(this);
-}
+class SonarKit : public ActivatingObject
+{
+public:
+    SonarKit(StudentWorld* sp);
+    virtual void doSomething();
+    void setTicksToLive();
+};
+
+class WaterPool : public ActivatingObject
+{
+public:
+    WaterPool(StudentWorld* sp, int x, int y);
+    ~WaterPool();
+    virtual void doSomething();
+    void setTicksToLive();
+};
+
+
+
+#endif // ACTOR_H_
