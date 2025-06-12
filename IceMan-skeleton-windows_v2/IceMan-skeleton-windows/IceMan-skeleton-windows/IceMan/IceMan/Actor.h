@@ -1,53 +1,54 @@
 #ifndef ACTOR_H_
 #define ACTOR_H_
-
+#include <cstdlib>
+#include <cmath>
+#include <random>
 #include "GraphObject.h"
 class StudentWorld;
 
 using namespace std;
 
 // Students:  Add code to this file, Actor.cpp, StudentWorld.h, and StudentWorld.cpp
-class Actor: public GraphObject{
+class Actor : public GraphObject {
 public:
-    
+
     virtual void doSomething() = 0;
-     //parametized constructor
+    //parametized constructor
     Actor(StudentWorld* sp, int ID, int x, int y, Direction dir, double siz, unsigned int dep, bool visible);
-    
+
     virtual ~Actor();
-    
-     //returns true if actor is alive
+
+    //returns true if actor is alive
     bool isAlive() const;
 
-     // getWorld function to return the StudentWorld pointer
-    virtual StudentWorld* getWorld(StudentWorld*& sp) const;
-    
-     // Get this actor's world
-    StudentWorld* getWorld() const;
-    
-      // Mark this actor as dead.
-    void setDead();
+    // getWorld function to return the StudentWorld pointer
+    void setWorld(StudentWorld*& sp) ;
+    // Get this actor's world
+    StudentWorld* getWorld() const { return sp; };
 
-      // Annoy this actor.
+    // Mark this actor as dead.
+    virtual void setDead();
+
+    // Annoy this actor.
     virtual bool annoy(unsigned int amt);
-    
-      // Can this actor dig through Ice?
+
+    // Can this actor dig through Ice?
     virtual bool canDigThroughIce() const;
-    
-      // Can other actors pass through this actor?
+
+    // Can other actors pass through this actor?
     virtual bool canActorsPassThroughMe() const;
-    
-      // Can this actor pick items up?
+
+    // Can this actor pick items up?
     virtual bool canPickThingsUp() const;
-    
-      // Does this actor hunt the IceMan?
+
+    // Does this actor hunt the IceMan?
     virtual bool huntsIceMan() const;
-    
-      // Can this actor need to be picked up to finish the level?
+
+    // Can this actor need to be picked up to finish the level?
     virtual bool needsToBePickedUpToFinishLevel() const;
 
-      // Move this actor to x,y if possible, and return true; otherwise,
-      // return false without moving.
+    // Move this actor to x,y if possible, and return true; otherwise,
+    // return false without moving.
     bool moveToIfPossible(int x, int y);
 
 protected:
@@ -56,39 +57,40 @@ protected:
     StudentWorld* sp = nullptr;
 
 private:
-    bool m_isAlive {true};//alive or dead
+    bool m_isAlive = true; // alive or dead
 };
 
 class Agent : public Actor {
 public:
     Agent(StudentWorld* sp, int ID, int x, int y, Direction dir,
-                unsigned int hitPoints);
+        unsigned int hitPoints);
     virtual bool annoy(unsigned int amount);
-
-      // Pick up a gold nugget.
+    //void setDead() { m_isAlive = false; }
+    // Pick up a gold nugget.
     virtual void addGold() = 0;
     virtual bool canDigThroughIce() const;
-      // How many hit points does this actor have left?
+    // How many hit points does this actor have left?
     unsigned int getHitPoints() const;
-
+    virtual bool leavingOilField() { return false; }
     virtual bool canPickThingsUp() const;
-    
-private:
-    unsigned int hitPoints = 100;
+
+protected:
+    unsigned int hitPoints =100;
 };
 
 
 
-class Iceman: public Agent{
+class Iceman : public Agent {
 public:
-    
+
     //contructor declaration
     Iceman(StudentWorld* sp);
-    virtual void doSomething();
-    void setDead();
-    virtual bool annoy(unsigned int amount);
-    virtual bool canDigThroughIce() const;
-    virtual void addGold();
+    virtual void doSomething() override;
+
+    virtual bool annoy(unsigned int amount) override;
+    //void setDead() override;
+    virtual bool canDigThroughIce() const override;
+    virtual void addGold() override;
     // Pick up a sonar kit.
     void addSonar();
 
@@ -103,96 +105,93 @@ public:
 
     // Get amount of water
     unsigned int getWater() const;
-    ~Iceman();
+    ~Iceman() override;
 private:
-   // int m_hits = 100;
-    int m_squirts = 5;
-    int m_sonar = 1;
-    int m_gold = 2;
+    unsigned int m_hits = 10;
+    unsigned int m_squirts = 5;
+    unsigned int m_sonar = 1;
+    unsigned int m_gold = 0;
     //StudentWorld* sp = nullptr;
-    bool m_isAlive;
 
 };
 
 
-class Ice: public Actor{
+class Ice : public Actor {
 public:
-    
+
     //contructor declaration
-    Ice(StudentWorld* sp);
+    Ice(StudentWorld* sp, int x, int y);
     virtual void doSomething() override;
-    ~Ice();
-    
-private:
-    //StudentWorld* sp = nullptr;
 
 };
+
 
 
 
 //******************************** Protestors *******************************
-class Protester: public Agent{
-    
-public:
-    Protester(StudentWorld* sp, int x, int y, int ID,
-                    unsigned int hitPoints, unsigned int score);
-    virtual void doSomething();
-    virtual bool annoy(unsigned int amount);
-    virtual void addGold();
-    virtual bool huntsIceMan() const;
+class Protester : public Agent {
 
-      // Set state to having gien up protest
+public:
+    Protester(StudentWorld* sp, int ID, unsigned int hitPoints, unsigned int score);
+    virtual void doSomething() override;
+    virtual bool annoy(unsigned int amount) override;
+    virtual void addGold() override;
+    unsigned int getGold() const { return m_gold; } // getter for gold
+    virtual bool huntsIceMan() const override;
+
+    // Set state to having gien up protest
     void setMustLeaveOilField();
+    bool leavingOilField() const { return leave; } // getter for leave state
 
-      // Set number of ticks until next move
+    // Set number of ticks until next move
     void setTicksToNextMove();
-    virtual ~Protester();
-    int getGold() const { return m_gold;} // getter for gold
+    void setSquaresToMoveInCurrentDirection();
 
-private:
-    int m_gold = 0; // number of gold nuggets for protesters
-    bool m_state = false; //starts off not giving up protest
+protected:
+    bool leave = false; // starts off not leaving
+    bool shouted = false;
+    int shoutTicks=0;
+    bool resting = false; // starts off not resting
+    int restingTicks = 0;
+    int perpenTicks = 0; // number of ticks since last perpendicular turn
+    int numSquaresToMoveInCurrentDirection = 30;
+    unsigned int m_gold = 0;
 };
 
 
-class RegularProtester : public Protester{
+class RegularProtester : public Protester {
 public:
-    RegularProtester(StudentWorld* sp, int x, int y, int ID);
+    RegularProtester(StudentWorld* sp);
     virtual void doSomething();
-    virtual void addGold();
-    virtual bool annoy(unsigned int amount);
-    virtual ~RegularProtester();
 
 };
 
-class HardcoreProtester: public Protester{
-    
+class HardcoreProtester : public Protester {
+
 public:
-    HardcoreProtester(StudentWorld* sp, int x, int y, int ID);
-    virtual void doSomething();
-    virtual void addGold();
-    virtual bool annoy(unsigned int amount);
-    virtual ~HardcoreProtester();
+    HardcoreProtester(StudentWorld* sp);
+    virtual void doSomething() override;
+    void addGold() override;
 };
 
 
-class Boulder: public Actor{
+class Boulder : public Actor {
 public:
-    Boulder(StudentWorld* sp);
+    Boulder(StudentWorld* sp, int x, int y);
     virtual bool canActorsPassThroughMe() const;
     virtual void doSomething();
-    virtual ~Boulder();
-private:
-    bool fallingState = false;
 
+private:
+    bool fallingState = false; // starts off not falling
 };
 
 class Squirt : public Actor
 {
 public:
-    Squirt(StudentWorld* sp, int x, int y, Direction dir);
+    Squirt(StudentWorld* sp, int x, int y, Direction dir, int m_distance);
     virtual void doSomething();
-    virtual ~Squirt();
+private:
+    int m_distance=4;
 };
 
 
@@ -201,59 +200,48 @@ public:
 class ActivatingObject : public Actor
 {
 public:
-
     ActivatingObject(StudentWorld* sp, int x, int y, int ID,
         int soundToPlay, bool activateOnPlayer,
         bool activateOnProtester, bool initallyActive);
-
+    ~ActivatingObject();
     bool needsToBePickedUpToFinishLevel() const;
-      // Set number of ticks until this object dies
+    // Set number of ticks until this object dies
     bool canActorsPassThroughMe() const;
-    void setTicksToLive();
-    virtual ~ActivatingObject();
+    virtual void setTicksToLive();
     virtual void doSomething() = 0;
-    
+    // Getters for member variables
     bool activateOnPlayer() const { return m_activateOnPlayer; }
     bool activateOnProtester() const { return m_activateOnProtester; }
     bool isInitiallyActive() const { return m_initiallyActive; }
+
+protected:
+    int lifetime = -1;
+    int trackTick = -1;
 private:
-    int ticksToLive;
-    //int m_ticksToLive = 0; // number of ticks until this object dies
+    int ticksToLive = 0; // number of ticks until this object dies
     int m_soundToPlay = SOUND_NONE; // sound to play when this object is activated
     bool m_activateOnPlayer; // true if this object activates on player, false otherwise
     bool m_activateOnProtester; // true if this object activates on protester, false otherwise
     bool m_initiallyActive; // true if this object is initially active, false otherwise
 };
 
-class BarrelsOfOil: public ActivatingObject{
+class BarrelsOfOil : public ActivatingObject {
 public:
-    BarrelsOfOil(StudentWorld* sp);
+    BarrelsOfOil(StudentWorld* sp, int x, int y);
     virtual void doSomething();
     virtual bool needsToBePickedUpToFinishLevel() const;
-    virtual ~BarrelsOfOil();
+    ~BarrelsOfOil();
 };
 
-class GoldNugget: public ActivatingObject{
+class GoldNugget : public ActivatingObject { // ghost block
 public:
     GoldNugget(StudentWorld* sp, int x, int y, bool temporary);
     virtual void doSomething();
-    virtual ~GoldNugget();
     void setTicksToLive();
+
 private:
-    int lifetime; // -1 = not set
     bool temporary = false; // true if temporary, false if permanent
 
-};
-
-
-class WaterPool : public ActivatingObject
-{
-public:
-    WaterPool(StudentWorld* sp);
-    virtual void doSomething();
-    virtual ~WaterPool();
-private:
-    int lifetime = -1; // -1 = not set
 };
 
 
@@ -263,10 +251,17 @@ public:
     SonarKit(StudentWorld* sp);
     virtual void doSomething();
     void setTicksToLive();
-    virtual ~SonarKit();
-private:
-    int lifetime = -1; // -1 = not set
 };
 
-#endif // ACTOR_H_
+class WaterPool : public ActivatingObject
+{
+public:
+    WaterPool(StudentWorld* sp, int x, int y);
+    ~WaterPool();
+    virtual void doSomething();
+    void setTicksToLive();
+};
 
+
+
+#endif // ACTOR_H_
