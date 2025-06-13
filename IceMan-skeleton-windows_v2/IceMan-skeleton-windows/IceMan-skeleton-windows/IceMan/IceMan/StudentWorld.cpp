@@ -5,7 +5,9 @@
 #include <cmath>
 #include <random>
 #include <utility>
+#include <tuple>
 #include <queue>
+#include <stdlib.h>
 using namespace std;
 
 class Actor;
@@ -24,9 +26,9 @@ StudentWorld::StudentWorld(std::string assetDir)
 
 //functions to implement
 
-void Actor::setWorld(StudentWorld*& sp) const {
-	sp = sw;
-}
+//void Actor::setWorld(StudentWorld*& sp) const {
+//	sp = sw;
+//}
 
 int StudentWorld::init() {
 	// make iceman
@@ -35,23 +37,25 @@ int StudentWorld::init() {
 		cout << "null" << endl;
 	agents.push_back(iceman); // add iceman to agents vector
 	
+	currentLevelNumber = getLevel();
 	//boulders code
 	int B = min(currentLevelNumber / 2 + 2, 9); // everything must be 6 squares apart
 	for (int i = 0; i < B; i++) {
 		int x, y; // must be (0, 20) and (60, 56) inclusive
 		do {
 			x = rand() % 61; // random x coordinate
-			y = rand() % 53 + 20; // random y coordinate
-		} while (NearItem(x, y, 6) || (x > 29 && x < 34 && y > 3)); // check if boulder is too close to another boulder
+			y = rand() % (53 - 20 + 1) + 20; // random y coordinate
+		} while (NearItem(x, y, 6) || (x > 26 && x < 34 && y > 3) || y > 60); // check if boulder is too close to another boulder
 		Boulder* boulder = new Boulder(sw, x, y);
 		iceField.push_back(boulder); // add boulder to aobj vector
 	}
 
 	//ice making code
+	iceField.reserve(61 * 60); // reserve space for ice objects
 	for (int i = 0; i < 65; i++) {
 		for (int j = 0; j < 60; j++) {
 			if (i > 29 && i < 34 && j > 3) {
-				coords.push_back(make_pair(i, j)); // add tunnel coordinates to coords vector
+				//coords.emplace(i, j); // add tunnel coordinates to coords vector
 				continue;
 			}
 			else {
@@ -65,16 +69,20 @@ int StudentWorld::init() {
 	}
 
 	// make static objects
+	// Barrels of Oil
 	int L = min(2 + currentLevelNumber, 21); // barrels of oil number
 	for (int i = 0; i < L; i++) {
 		int x, y; // must be at (0,0) and (60, 56) inclusive
 		do {
-			x = rand() % 61; // random x coordinate
-			y = rand() % 57; // random y coordinate
+			x = rand() % 60; // random x coordinate
+			y = rand() % 55; // random y coordinate
 		} while (NearItem(x, y, 6)); // check if boulder is too close to another boulder
-		BarrelsOfOil* barrel = new BarrelsOfOil(this, x, y);
+		BarrelsOfOil* barrel = new BarrelsOfOil(sw, x, y);
 		aobj.push_back(barrel);
+		barrels = L;
 	}
+
+	// Gold Nuggets
 	int K = max(5 - currentLevelNumber / 2, 2); 
 	for (int i = 0; i < K; i++) {
 		int x, y; // must be at (0,0) and (60, 56) inclusive
@@ -82,8 +90,7 @@ int StudentWorld::init() {
 			x = rand() % 61; // random x coordinate
 			y = rand() % 57; // random y coordinate
 		} while (NearItem(x, y, 6)); // check if boulder is too close to another boulder
-	
-		GoldNugget* nugget = new GoldNugget(sw, (std::rand() % 61), (std::rand() % 57), false);
+		GoldNugget* nugget = new GoldNugget(sw, x,y, false);
 		aobj.push_back(nugget);
 	}
 	//start with 1 protester
@@ -106,9 +113,9 @@ int StudentWorld::move() {
 
 	setDisplayText();
 
+	// Protester spawning code
 	currentLevelNumber = getLevel(); // get the current level number
 	bool canAddP = false;
-	
 	int probabilityOfHardcore = min(90, currentLevelNumber * 10 + 30);
 	// new protester every T ticks
 	int T = std::max(25, 200 - currentLevelNumber); // new protester
@@ -133,7 +140,7 @@ int StudentWorld::move() {
 	// randomly add water pool or sonar kit
 	int G = currentLevelNumber * 30 + 290; // 1 in G chance of water kit or sonar kit added
 
-	int random = (rand() % (G + 1)); 
+	int random = (rand() % G + 1); 
 	if (G == random) {
 		int random2 = (rand() % 6);
 		if (random2 == 1) { // 1 in 5 chance of sonar kit
@@ -145,10 +152,9 @@ int StudentWorld::move() {
 			do {
 				x = rand() % 57; // random x coordinate
 				y = rand() % 57; // random y coordinate
-			} while ((atItem(x, y, true)) || atItem(x + 3, y, true) 
-				|| atItem(x, y + 3, true) || atItem(x + 3, y + 3, true) 
-				|| NearItem(x, y, 6)); // check if boulder is too close to another boulder
-			WaterPool* pool = new WaterPool(this, x, y); // random iceless spot
+			} while ((atItem(x, y, true)) || atItem(x + 3, y, true) || 
+				atItem(x, y + 3, true) || atItem(x + 3, y + 3, true) || NearItem(x, y, 6)); // random iceless spot
+			WaterPool* pool = new WaterPool(this, x, y); 
 			aobj.push_back(pool);
 		}
 	}
@@ -192,7 +198,7 @@ int StudentWorld::move() {
 		return GWSTATUS_FINISHED_LEVEL;
 	}
 
-	// delete objects (protesters, boulders, gold, waterpools, squirts, sonarkits, barrels)
+	// delete objects (protesters, boulders, gold, waterpools, squirts, sonarkits, barrels, ice)
 	int index = 0;
 	for (auto& agent : agents) {
 		if (agent->isAlive() == false) {
@@ -214,14 +220,14 @@ int StudentWorld::move() {
 		index++;
 	}
 	index = 0;
-	for (auto& ice : iceField) {
+	/*for (auto& ice : iceField) {
 		if (ice->isAlive() == false) {
 			delete ice;
 			iceField.erase((iceField.begin() + index));
 			index--;
 		}
 		index++;
-	}
+	}*/
 
 	ticks++; // increment ticks for each move
 	return GWSTATUS_CONTINUE_GAME;
@@ -268,12 +274,11 @@ void StudentWorld::clearIce(int x, int y) {
 					(iceObj->getY() == y + 3))
 				&& iceObj->isVisible()) {
 				iceObj->setVisible(false);
+				iceObj->setDead(); // set ice object to dead
+				//coords.emplace(iceObj->getX(), iceObj->getY());
 				/*if (ticks % 15 == 0)
 					playSound(SOUND_DIG);*/
-					//iceObj->setDead();
 				//cout << "clear ice" << endl;
-				pair<int, int> coord = { make_pair(iceObj->getX(), iceObj->getY()) };
-				coords.push_back(coord);
 			}
 		}
 	}
@@ -281,28 +286,50 @@ void StudentWorld::clearIce(int x, int y) {
 
 
 bool StudentWorld::canActorMoveTo(Actor* a, int x, int y) const {
-	if (x < 0 || x >= 60 || y < 0 || y >= 64) {
+	if (x < 0 || x >= 60 || y < 0 || y >= 60) {
 		return false; // out of bounds
 	}
 	for (auto& ice : iceField) {
-		if (ice->getX() == x && ice->getY() == y && ice->isVisible()) {
+		if (ice->isVisible() && ice->getX() == x && ice->getY() == y) {
 			return false; // ice blocks and boulders
 		}
 	}
+
 	return true;
+	//if (x < 0 || x >= 60 || y < 0 || y >= 64) {
+	//	return false; // out of bounds
+	//}
+	//if (atItem(x, y, true) == true) {
+	//	return false; // if there is a boulder in radius 3 or ice at x, y
+
+//for (auto& iceObj : iceField) {
+//	if (((iceObj->getX() == x) ||
+//		(iceObj->getX() == x + 1) ||
+//		(iceObj->getX() == x + 2) ||
+//		(iceObj->getX() == x + 3)) &&
+//		((iceObj->getY() == y) ||
+//			(iceObj->getY() == y + 1) ||
+//			(iceObj->getY() == y + 2) ||
+//			(iceObj->getY() == y + 3))
+//		&& iceObj->isVisible()) {
+//		return false; // ice blocks and boulders
+//	}
+//}
+//return true;
 }
 
 int StudentWorld::annoyAllNearbyActors(Actor* annoyer, int points, int radius) {
 	if (findNearbyPickerUpper(annoyer, radius) != nullptr) { // if there is a nearby iceman or protester that can pick things up
 		Agent* nearbyAnnoyed = findNearbyPickerUpper(annoyer, radius);
-		if (nearbyAnnoyed->getID() == IID_PLAYER) { // if iceman is in radius
+		if (nearbyAnnoyed->getID() == IID_PLAYER && nearbyAnnoyed->isAlive()) { // if iceman is in radius
 			iceman->annoy(points); // annoy iceman
 			iceman->setDead(); // instant death
 			return 1; // return 1 for iceman
 		}
-		else {
+		else if (nearbyAnnoyed->isAlive()) {
 			nearbyAnnoyed->annoy(points); // annoy the nearby protester
 			increaseScore(500); // 500 points for annoying protesters
+			nearbyAnnoyed->setDead();
 			return 2; // return 2 for protester
 		}
 	}
@@ -339,12 +366,12 @@ Iceman* StudentWorld::findNearbyIceMan(Actor* a, int radius) const {
 	  // return a pointer to one of them, otherwise null.
 Agent* StudentWorld::findNearbyPickerUpper(Actor* a, int radius) const {
 	for (int i = 0; i < agents.size(); i++) {
-		if (radius > abs((a->getX() - agents[i]->getX())) && radius > abs((a->getY() - agents[i]->getY())) && agents[i]->canPickThingsUp() == true)
+		if (radius > abs((a->getX() - agents[i]->getX())) && radius > abs(a->getY() - agents[i]->getY()))
 			return agents[i];
 	}
-	if (radius > abs((a->getX() - iceman->getX())) && radius > abs((a->getY() - iceman->getY())) && iceman->canPickThingsUp() == true) {
-		return iceman; // if iceman is in radius, return iceman
-	}
+	//if (radius > abs((a->getX() - iceman->getX())) && radius > abs(a->getY() - iceman->getY())) {
+	//	return iceman; // if iceman is in radius, return iceman
+	//}
 	return nullptr; // if no actors in radius, return null
 }
 
@@ -370,7 +397,7 @@ bool StudentWorld::facingTowardIceMan(Actor* a) const {
 			return true; // actor is facing right away from iceman
 		}
 	}
-	if (a->getY() == iceman->getY()) { // same y level && above iceman
+	else if (a->getY() == iceman->getY()) { // same y level && above iceman
 		if (a->getDirection() == GraphObject::Direction::up && a->getY() < iceman->getY())
 			return true; // actor is facing up towards iceman
 		else if (a->getDirection() == GraphObject::Direction::down && a->getY() > iceman->getY()) {
@@ -384,169 +411,230 @@ bool StudentWorld::facingTowardIceMan(Actor* a) const {
 // If the Actor a has a clear line of sight to the IceMan, return (not blocked by ice/boulders
 	  // the direction to the IceMan, otherwise GraphObject::none.
 GraphObject::Direction StudentWorld::lineOfSightToIceMan(Actor* a, bool facing) const {
-	if (facingTowardIceMan(a) == false && facing == true) {
+	//if (facingTowardIceMan(a) == false && facing == true) {
+	//	return GraphObject::Direction::none; // if actor is not facing towards iceman, return none
+	//}
+
+	//if (a->getX() == iceman->getX() && a->getX() + 1 == iceman->getX() + 1 &&
+	//	a->getX() + 2 == iceman->getX() + 2 && a->getX() + 3 == iceman->getX() + 3) { // same x level
+	//	if (iceman->getY() > a->getY()) {// up
+	//		for (auto& ice : iceField)
+	//			if (ice->getY() < iceman->getY() || ice->getY() > a->getY() && ice->isVisible()) {
+	//				if (((ice->getX() == a->getX() || ice->getX() == a->getX() + 1 ||
+	//						ice->getX() == a->getX() + 2 || ice->getX() == a->getX() + 3)))
+	//					return GraphObject::Direction::none;
+	//			}
+	//	}
+	//	else {//if (iceman->getY() < a->getY()) // down
+	//		for (auto& ice : iceField)
+	//			if (ice->isVisible() && (ice->getY() < a->getY() || ice->getY() > iceman->getY()) &&
+	//				((ice->getX() == a->getX() || ice->getX() == a->getX() + 1 ||
+	//					ice->getX() == a->getX() + 2 || ice->getX() == a->getX() + 3)))
+	//				return GraphObject::Direction::none;
+	//	}
+	//}
+	//else if (a->getY() == iceman->getY() && a->getY() + 1 == iceman->getY() + 1 &&
+	//	a->getY() + 2 == iceman->getY() + 2 && a->getY() + 3 == iceman->getY() + 3) { // same y level
+	//	if (iceman->getX() > a->getX()) { // right
+	//		for (auto& ice : iceField)
+	//			if (ice->isVisible() && (ice->getX() > a->getX() || ice->getX() < iceman->getX()) &&
+	//				((ice->getY() == a->getY() || ice->getY() == a->getY() + 1 ||
+	//					ice->getY() == a->getY() + 2 || ice->getY() == a->getY() + 3)))
+	//				return GraphObject::Direction::none;
+	//	}
+	//	else if (iceman->getX() < a->getX()) { // left
+	//		for (auto& ice : iceField)
+	//			if (ice->isVisible() && (ice->getX() < a->getX() || ice->getX() > iceman->getX()) &&
+	//				((ice->getY() == a->getY() || ice->getY() == a->getY() + 1 ||
+	//					ice->getY() == a->getY() + 2 || ice->getY() == a->getY() + 3)))
+	//				return GraphObject::Direction::none;
+	//	}
+	//}
+	//if (a->getY() > iceman->getY()) {
+	//	return GraphObject::Direction::up;
+	//}
+	//else if (a->getY() < iceman->getY()) {
+	//	return GraphObject::Direction::down;
+	//}
+	//else if (iceman->getX() > a->getX()) {
+	//	return GraphObject::Direction::right;
+	//}
+	//else if (iceman->getX() < a->getX()) {
+	//	return GraphObject::Direction::left;
+
+	//}
+	//return GraphObject::Direction::none;
+
+	if (facingTowardIceMan(a) == false && facing) {
 		return GraphObject::Direction::none; // if actor is not facing towards iceman, return none
 	}
-	bool blocked = false; // if there is an object in the way
+	//if (a->getX() == iceman->getX()) {
+	//	for (auto& ice : coords) {
+	//		if (ice.first >= a->getX() && ice.first < a->getX() + 4) {
+	//			if ((a->getY() < iceman->getY() && ice.second > a->getY() && ice.second < iceman->getY()) ||
+	//				(a->getY() > iceman->getY() && ice.second > iceman->getY() && ice.second < a->getY())) {
+	//				continue;
+	//			}
+	//			else
+	//				return GraphObject::Direction::none;
+	//		}
+	//	}
+	//	if (blocked)
+	//		return GraphObject::Direction::none;
 
-	// same x level as iceman
-	if (a->getX() == iceman->getX() && a->getX() + 1 == iceman->getX() + 1 && 
-		a->getX() + 2 == iceman->getX() + 2 && a->getX() + 3 == iceman->getX() + 3) {
-		// if iceman is up from a
-		if (iceman->getY() > a->getY()) {
-			for (int i = a->getY(); i < iceman->getY(); i++) { //starting at actor, ending at iceman
-				for (int h = 0; h < iceField.size(); h++) {// i = x coords  getY = y coords
-					if (iceField[h]->isVisible() && (iceField[h]->getX() == a->getX()
-						|| iceField[h]->getX() == a->getX() + 1 || iceField[h]->getX() == a->getX() + 2
-						|| iceField[h]->getX() == a->getX() + 3)) {
-						if (iceField[h]->getY() == i) { // x, y coords match
-							return GraphObject::Direction::none;
-						}
-					}
+	//	return (a->getY() < iceman->getY()) ? GraphObject::Direction::up : GraphObject::Direction::down;
+	//}
+	//// Horizontal line-of-sight (same Y)
+	//else if (a->getY() == iceman->getY()) {
+	//	for (auto& ice : coords) {
+
+	//		if (ice.second >= a->getY() && ice.second < a->getY() + 4) {
+	//			if ((a->getX() < iceman->getX() && ice.first > a->getX() && ice.first < iceman->getX()) ||
+	//				(a->getX() > iceman->getX() && ice.first > iceman->getX() && ice.first < a->getX())) {
+	//				continue;
+	//			}
+	//			else
+	//				return GraphObject::Direction::none;
+	//		}
+	//	}
+	//	if (blocked)
+	//		return GraphObject::Direction::none;
+
+	//	return (a->getX() < iceman->getX()) ? GraphObject::Direction::right : GraphObject::Direction::left;
+	//}
+
+	//return GraphObject::Direction::none;
+
+
+
+
+	int actorX = a->getX();
+	int actorY = a->getY();
+	int icemanX = iceman->getX();
+	int icemanY = iceman->getY();
+	// Vertical line-of-sight (same X)
+	if (a->getX() == icemanX) {
+		for (auto& ice : iceField) {
+			if (!ice->isVisible())
+				continue;
+
+			if (ice->getX() >= actorX && ice->getX() < actorX + 4) {
+				if ((actorY < icemanY && ice->getY() > actorY && ice->getY() < icemanY) ||
+					(actorY > icemanY && ice->getY() > icemanY && ice->getY() < actorY)) {
+					return GraphObject::Direction::none;
 				}
 			}
 		}
-		else if (iceman->getY() < a->getY()) { // if iceman is to the below a (down)
-			for (int i = iceman->getY(); i < a->getY(); i++) { //starting at iceman, ending at iceman
-				for (int h = 0; h < iceField.size(); h++) {// i = x coords  getY = y coords
-					if (iceField[h]->isVisible() && (iceField[h]->getX() == a->getX() ||
-						iceField[h]->getX() == a->getX() + 1 || iceField[h]->getX() == a->getX() + 2 ||
-						iceField[h]->getX() == a->getX() + 3)) {
-						if (iceField[h]->getY() == i) { // x, y coords match
-							return GraphObject::Direction::none;
-						}
-					}
-				}
-			}
-		}
+
+		return (actorY < icemanY) ? GraphObject::Direction::up : GraphObject::Direction::down;
 	}
-	/*
-		  y + 3						x + i						y + 3
-	a     y + 2                     x + i           	 iceman y + 2
-		  y + 1						x + i						y + 1
-		  y							x + i						y
-	*/
-	// same y level as iceman
-	else if (a->getY() == iceman->getY() && a->getY() + 1 == iceman->getY() + 1
-		&& a->getY() + 2 == iceman->getY() + 2 && a->getY() + 3 == iceman->getY() + 3) {
-		if (iceman->getX() > a->getX()) { // if iceman is to the right of a
-			for (int i = a->getX(); i < iceman->getX(); i++) { //starting at actor, ending at iceman
-				for (int h = 0; h < iceField.size(); h++) {// i = x coords  getY = y coords
-					if (iceField[h]->isVisible() && (iceField[h]->getY() == a->getY() ||
-						iceField[h]->getY() == a->getY() + 1 || iceField[h]->getY() == a->getY() + 2 ||
-						iceField[h]->getY() == a->getY() + 3)) {
-						if (iceField[h]->getX() == i) { // x, y coords match
-							return GraphObject::Direction::none;
-						}
-					}
+	// Horizontal line-of-sight (same Y)
+	else if (actorY == icemanY) {
+		for (auto& ice : iceField) {
+			if (!ice->isVisible())
+				continue;
+
+			if (ice->getY() >= actorY && ice->getY() < actorY + 4) {
+				if ((actorX < icemanX && ice->getX() > actorX && ice->getX() < icemanX) ||
+					(actorX > icemanX && ice->getX() > icemanX && ice->getX() < actorX)) {
+					return GraphObject::Direction::none;
 				}
 			}
 		}
-		else if (iceman->getX() < a->getX()) {// if iceman is to the left of a
-			for (int i = iceman->getX(); i < a->getX(); i++) { //starting at actor, ending at iceman
-				for (int h = 0; h < iceField.size(); h++) {// i = x coords  getY = y coords
-					if (iceField[h]->isVisible() && (iceField[h]->getY() == a->getY() ||
-						iceField[h]->getY() == a->getY() + 1 || iceField[h]->getY() == a->getY() + 2 ||
-						iceField[h]->getY() == a->getY() + 3)) {
-						if (iceField[h]->getX() == i) { // x, y coords match
-							return GraphObject::Direction::none;
-						}
-					}
-				}
-			}
-		}
+
+		return (actorX < icemanX) ? GraphObject::Direction::right : GraphObject::Direction::left;
 	}
-	if (blocked == false) { // if there is not an object in the path
-		if (a->getY() > iceman->getY()) {
-			return GraphObject::Direction::up;
-		}
-		else if (a->getY() < iceman->getY()) {
-			return GraphObject::Direction::down;
-		}
-		else if (iceman->getX() > a->getX()) {
-			return GraphObject::Direction::right;
-		}
-		else if (iceman->getX() < a->getX()) {
-			return GraphObject::Direction::left;
-		}
-	}
+
 	return GraphObject::Direction::none;
 }
 
+
+// if this actor is within a radius of iceman
 bool StudentWorld::isNearIceMan(Actor* a, int radius) const {
-	if (radius > abs((a->getX() - iceman->getX())) && radius > abs((a->getY() - iceman->getY())))
+	if (!iceman || !a)
+		return false;
+	if (radius > abs(a->getX() - iceman->getX()) && radius > abs(a->getY() - iceman->getY()))
 		return true;
 	return false;
+
+	//if (radius > abs((a->getX() - iceman->getX())) && radius > abs((a->getY() - iceman->getY())))
+	//	return true;
+	//return false;
 }
 
+// if within radius of boulder
 bool StudentWorld::NearBoulder(int x, int y, int radius) const {
 	for (int i = 0; i < iceField.size(); i++) {
-		if (iceField[i] != nullptr) {
-			if (iceField[i]->getID() == IID_BOULDER) { // if there is a boulder in the iceField
-				if (radius > std::abs((x - iceField[i]->getX())) && radius > std::abs((y - iceField[i]->getY())))
+		if (iceField[i] != nullptr && iceField[i]->getID() == IID_BOULDER) { // if there is a boulder in the iceField
+				if (radius > std::abs(x - iceField[i]->getX()) && radius > std::abs(y - iceField[i]->getY()))
 					return true; // if boulder is in radius, return true
-			}
 		}
 	}
 	return false;
 }
 
+//within a certain radius of boulder, gold, water pool, sonar kit, and/or oil barrels
 bool StudentWorld::NearItem(int x, int y, int radius) const {
-	bool tooClose = false;
-	for (int i = 0; i < iceField.size(); i++) {
-		if (iceField[i] != nullptr) {
-			if (iceField[i]->getID() == IID_BOULDER) { // if there is a boulder in the iceField
-				if (radius > std::abs((x - iceField[i]->getX())) && radius > std::abs((y - iceField[i]->getY())))
-					return true; // if boulder is in radius, return true
-			}
-		}
+	if (NearBoulder(x, y, radius)) { // if there is a boulder within radius
+		return true;
 	}
+
 	for (int i = 0; i < aobj.size(); i++) {
 		if (aobj[i] != nullptr) {
-			if (radius > std::abs((x - aobj[i]->getX())) && radius > std::abs((y - aobj[i]->getY())))
+			if (radius > std::abs(x - aobj[i]->getX()) && radius > std::abs(y - aobj[i]->getY()))
 				return true; // if boulder is in radius, return true
 		}
 	}
 	return false;
 }
 
+// checks the iceField for boulder and if ice == true, for ice
 bool StudentWorld::atItem(int x, int y, bool ice) const { // if you need to check ice, ice == true, boulders = false
-	bool onit = false;
+	//bool onit = false;
 	for (int i = 0; i < iceField.size(); i++) {
-		if ((iceField[i]->getX() == x || iceField[i]->getX() == x - 1
-			|| iceField[i]->getX() == x - 2 || iceField[i]->getX() == x - 3)
-			&& iceField[i]->getY() == y) {
-			if (iceField[i]->getID() == IID_ICE && ice == false) // if is ice and not checking ice,
-				continue; // if item is at x, y, return true
-			else
-				return true;
-		}
-		else if ((iceField[i]->getX() == x || iceField[i]->getX() == x - 1
-			|| iceField[i]->getX() == x - 2 || iceField[i]->getX() == x - 3)
-			&& iceField[i]->getY() == y - 1) {
-			if (iceField[i]->getID() == IID_ICE && ice == false) // if is ice and not checking ice,
-				continue; // if item is at x, y, return true
-			else
-				return true;
-		}
-		else if ((iceField[i]->getX() == x || iceField[i]->getX() == x - 1 ||
-			iceField[i]->getX() == x - 2 || iceField[i]->getX() == x - 3)
-			&& iceField[i]->getY() == y - 2) {
-			if (iceField[i]->getID() == IID_ICE && ice == false) // if is ice and not checking ice,
-				continue; // if item is at x, y, return true
-			else
-				return true;
-		}
-		else if ((iceField[i]->getX() == x || iceField[i]->getX() == x - 1 ||
-			iceField[i]->getX() == x - 2 || iceField[i]->getX() == x - 3)
-			&& iceField[i]->getY() == y - 3) {
-			if (iceField[i]->getID() == IID_ICE && ice == false) // if is ice and not checking ice,
-				continue; // if item is at x, y, return true
-			else
-				return true;
+		if (iceField[i]->getX() >= x - 3 && iceField[i]->getX() <= x && iceField[i]->getY() >= y - 3 && iceField[i]->getY() <= y) {
+			if (iceField[i]->getID() == IID_ICE && !ice)
+				continue; // skip ice if not checking for it
+			return true; // object found in the region
 		}
 	}
 	return false;
+	//bool onit = false;
+	//for (int i = 0; i < iceField.size(); i++) {
+	//	if ((iceField[i]->getX() == x || iceField[i]->getX() == x - 1
+	//		|| iceField[i]->getX() == x - 2 || iceField[i]->getX() == x - 3)
+	//		&& iceField[i]->getY() == y) {
+	//		if (iceField[i]->getID() == IID_ICE && ice == false) // if is ice and not checking ice,
+	//			continue; // if item is at x, y, return true
+	//		else
+	//			return true;
+	//	}
+	//	else if ((iceField[i]->getX() == x || iceField[i]->getX() == x - 1
+	//		|| iceField[i]->getX() == x - 2 || iceField[i]->getX() == x - 3)
+	//		&& iceField[i]->getY() == y - 1) {
+	//		if (iceField[i]->getID() == IID_ICE && ice == false) // if is ice and not checking ice,
+	//			continue; // if item is at x, y, return true
+	//		else
+	//			return true;
+	//	}
+	//	else if ((iceField[i]->getX() == x || iceField[i]->getX() == x - 1 ||
+	//		iceField[i]->getX() == x - 2 || iceField[i]->getX() == x - 3)
+	//		&& iceField[i]->getY() == y - 2) {
+	//		if (iceField[i]->getID() == IID_ICE && ice == false) // if is ice and not checking ice,
+	//			continue; // if item is at x, y, return true
+	//		else
+	//			return true;
+	//	}
+	//	else if ((iceField[i]->getX() == x || iceField[i]->getX() == x - 1 ||
+	//		iceField[i]->getX() == x - 2 || iceField[i]->getX() == x - 3)
+	//		&& iceField[i]->getY() == y - 3) {
+	//		if (iceField[i]->getID() == IID_ICE && ice == false) // if is ice and not checking ice,
+	//			continue; // if item is at x, y, return true
+	//		else
+	//			return true;
+	//	}
+	//}
+	//return false;
 }
 
 struct TreeNode {
@@ -560,11 +648,13 @@ struct TreeNode {
 };
 
 
+// returns direction of shortest path to exit
 GraphObject::Direction StudentWorld::determineFirstMoveToExit(int x, int y) {
 	const int goalX = 60;
 	const int goalY = 60;
 
 	std::queue<TreeNode*> q;
+	vector<TreeNode*> allNodes;
 	bool visited[64][64] = { false };
 
 	// Root node: the protester's current location
@@ -573,6 +663,7 @@ GraphObject::Direction StudentWorld::determineFirstMoveToExit(int x, int y) {
 	TreeNode* exitNode = nullptr;
 	visited[x][y] = true;
 	q.push(root);
+	allNodes.push_back(root);
 
 	// stores 4 directions
 	vector<tuple<int, int, GraphObject::Direction>> directions = { {0, 1, GraphObject::up   },
@@ -594,7 +685,7 @@ GraphObject::Direction StudentWorld::determineFirstMoveToExit(int x, int y) {
 		}
 
 		//check if valid for each direction for current place
-		for (auto [dX, dY, dir] : directions) {
+		for (auto& [dX, dY, dir] : directions) {
 			int nextX = cX + dX;
 			int nextY = cY + dY;
 
@@ -603,6 +694,7 @@ GraphObject::Direction StudentWorld::determineFirstMoveToExit(int x, int y) {
 				visited[nextX][nextY] = true;
 				TreeNode* child = new TreeNode(nextX, nextY, dir, curr);
 				q.push(child);
+				allNodes.push_back(child);
 			}
 		}
 	}
@@ -618,18 +710,22 @@ GraphObject::Direction StudentWorld::determineFirstMoveToExit(int x, int y) {
 			dirToMove = path->fromParent;
 		return dirToMove;
 	}
+	for (TreeNode* node : allNodes) {
+		delete node;
+	}
 	return GraphObject::none;
 }
 
 
 
-// Determine the direction of the first move a hardcore protester
+// Determine the direction of the first move a protester
 // makes to approach the IceMan.
 GraphObject::Direction StudentWorld::determineFirstMoveToIceMan(int x, int y) {
 	const int goalX = iceman->getX();
 	const int goalY = iceman->getY();
 
 	std::queue<TreeNode*> q;
+	vector<TreeNode*> allNodes;
 	bool visited[64][64] = { false };
 
 	// Root node: the protester's current location
@@ -638,6 +734,7 @@ GraphObject::Direction StudentWorld::determineFirstMoveToIceMan(int x, int y) {
 	TreeNode* exitNode = nullptr;
 	visited[x][y] = true;
 	q.push(root);
+	allNodes.push_back(root);
 
 	// stores 4 directions
 	vector<tuple<int, int, GraphObject::Direction>> directions = { {0, 1, GraphObject::up   },
@@ -659,7 +756,7 @@ GraphObject::Direction StudentWorld::determineFirstMoveToIceMan(int x, int y) {
 		}
 
 		//check if valid for each direction for current place
-		for (auto [dX, dY, dir] : directions) {
+		for (auto& [dX, dY, dir] : directions) {
 			int nextX = cX + dX;
 			int nextY = cY + dY;
 
@@ -668,6 +765,7 @@ GraphObject::Direction StudentWorld::determineFirstMoveToIceMan(int x, int y) {
 				visited[nextX][nextY] = true;
 				TreeNode* child = new TreeNode(nextX, nextY, dir, curr);
 				q.push(child);
+				allNodes.push_back(child);
 			}
 		}
 	}
@@ -683,9 +781,11 @@ GraphObject::Direction StudentWorld::determineFirstMoveToIceMan(int x, int y) {
 			dirToMove = path->fromParent;
 		return dirToMove;
 	}
+	for (TreeNode* node : allNodes) {
+		delete node;
+	}
 	return GraphObject::none;
 }
-
 
 
 
