@@ -389,55 +389,31 @@ GraphObject::Direction StudentWorld::lineOfSightToIceMan(Actor* a, bool facing) 
 	}
 	bool blocked = false; // if there is an object in the way
 
-	if (a->getX() == iceman->getX() && a->getX() + 1 == iceman->getX() + 1
-		&& a->getX() + 2 == iceman->getX() + 2 && a->getX() +3 == iceman->getX() + 3) {
-		if (iceman->getY() > a->getY()) { // if iceman is up from a
+	// same x level as iceman
+	if (a->getX() == iceman->getX() && a->getX() + 1 == iceman->getX() + 1 && 
+		a->getX() + 2 == iceman->getX() + 2 && a->getX() + 3 == iceman->getX() + 3) {
+		// if iceman is up from a
+		if (iceman->getY() > a->getY()) {
 			for (int i = a->getY(); i < iceman->getY(); i++) { //starting at actor, ending at iceman
 				for (int h = 0; h < iceField.size(); h++) {// i = x coords  getY = y coords
-					if (iceField[h]->getX() == a->getX() && iceField[h]->isVisible()) {
+					if (iceField[h]->isVisible() && (iceField[h]->getX() == a->getX()
+						|| iceField[h]->getX() == a->getX() + 1 || iceField[h]->getX() == a->getX() + 2
+						|| iceField[h]->getX() == a->getX() + 3)) {
 						if (iceField[h]->getY() == i) { // x, y coords match
-							blocked = true;
-						}
-					}
-					else if (iceField[h]->getX() == a->getX() + 1 && iceField[h]->isVisible()) {
-						if (iceField[h]->getY() == i) { // x, y coords match i = line of x coords
-							blocked = true;
-						}
-					}
-					else if (iceField[h]->getX() == a->getX() + 2 && iceField[h]->isVisible()) {
-						if (iceField[h]->getY() == i) { // x, y coords match i = line of x coords
-							blocked = true;
-						}
-					}
-					else if (iceField[h]->getX() == a->getX() + 3 && iceField[h]->isVisible()) {
-						if (iceField[h]->getY() == i) { // x, y coords match i = line of x coords
-							blocked = true;
+							return GraphObject::Direction::none;
 						}
 					}
 				}
 			}
 		}
-		else {// if iceman is to the below a (down)
+		else if (iceman->getY() < a->getY()) { // if iceman is to the below a (down)
 			for (int i = iceman->getY(); i < a->getY(); i++) { //starting at iceman, ending at iceman
 				for (int h = 0; h < iceField.size(); h++) {// i = x coords  getY = y coords
-					if (iceField[h]->getX() == a->getX() && iceField[h]->isVisible()) {
+					if (iceField[h]->isVisible() && (iceField[h]->getX() == a->getX() ||
+						iceField[h]->getX() == a->getX() + 1 || iceField[h]->getX() == a->getX() + 2 ||
+						iceField[h]->getX() == a->getX() + 3)) {
 						if (iceField[h]->getY() == i) { // x, y coords match
-							blocked = true;
-						}
-					}
-					if (iceField[h]->getX() == a->getX() + 1 && iceField[h]->isVisible()) {
-						if (iceField[h]->getY() == i) { // x, y coords match i = line of x coords
-							blocked = true;
-						}
-					}
-					if (iceField[h]->getX() == a->getX() + 2 && iceField[h]->isVisible()) {
-						if (iceField[h]->getY() == i) { // x, y coords match i = line of x coords
-							blocked = true;
-						}
-					}
-					if (iceField[h]->getX() == a->getX() + 3 && iceField[h]->isVisible()) {
-						if (iceField[h]->getY() == i) { // x, y coords match i = line of x coords
-							blocked = true;
+							return GraphObject::Direction::none;
 						}
 					}
 				}
@@ -451,55 +427,29 @@ GraphObject::Direction StudentWorld::lineOfSightToIceMan(Actor* a, bool facing) 
 		  y							x + i						y
 	*/
 	// same y level as iceman
-	else if (a->getY() == iceman->getY() && a->getY() + 1 == iceman->getY() + 1 &&
-		a->getY() + 2 == iceman->getY() + 2 && a->getY() + 3 == iceman->getY() + 3) {
+	else if (a->getY() == iceman->getY() && a->getY() + 1 == iceman->getY() + 1
+		&& a->getY() + 2 == iceman->getY() + 2 && a->getY() + 3 == iceman->getY() + 3) {
 		if (iceman->getX() > a->getX()) { // if iceman is to the right of a
 			for (int i = a->getX(); i < iceman->getX(); i++) { //starting at actor, ending at iceman
 				for (int h = 0; h < iceField.size(); h++) {// i = x coords  getY = y coords
-					if (iceField[h]->getY() == a->getY() && iceField[h]->isVisible()) {
+					if (iceField[h]->isVisible() && (iceField[h]->getY() == a->getY() ||
+						iceField[h]->getY() == a->getY() + 1 || iceField[h]->getY() == a->getY() + 2 ||
+						iceField[h]->getY() == a->getY() + 3)) {
 						if (iceField[h]->getX() == i) { // x, y coords match
-							blocked = true;
-						}
-					}
-					if (iceField[h]->getY() == a->getY() - 1 && iceField[h]->isVisible()) {
-						if (iceField[h]->getX() == i) { // x, y coords match i = line of x coords
-							blocked = true;
-						}
-					}
-					if (iceField[h]->getY() == a->getY() - 2 && iceField[h]->isVisible()) {
-						if (iceField[h]->getX() == i) { // x, y coords match i = line of x coords
-							blocked = true;
-						}
-					}
-					if (iceField[h]->getY() == a->getY() - 3 && iceField[h]->isVisible()) {
-						if (iceField[h]->getX() == i) { // x, y coords match i = line of x coords
-							blocked = true;
+							return GraphObject::Direction::none;
 						}
 					}
 				}
 			}
 		}
-		else {// if iceman is to the left of a
+		else if (iceman->getX() < a->getX()) {// if iceman is to the left of a
 			for (int i = iceman->getX(); i < a->getX(); i++) { //starting at actor, ending at iceman
 				for (int h = 0; h < iceField.size(); h++) {// i = x coords  getY = y coords
-					if (iceField[h]->getY() == a->getY() && iceField[h]->isVisible()) {
+					if (iceField[h]->isVisible() && (iceField[h]->getY() == a->getY() ||
+						iceField[h]->getY() == a->getY() + 1 || iceField[h]->getY() == a->getY() + 2 ||
+						iceField[h]->getY() == a->getY() + 3)) {
 						if (iceField[h]->getX() == i) { // x, y coords match
-							blocked = true;
-						}
-					}
-					if (iceField[h]->getY() == a->getY() + 1 && iceField[h]->isVisible()) {
-						if (iceField[h]->getX() == i) { // x, y coords match i = line of x coords
-							blocked = true;
-						}
-					}
-					if (iceField[h]->getY() == a->getY() + 2 && iceField[h]->isVisible()) {
-						if (iceField[h]->getX() == i) { // x, y coords match i = line of x coords
-							blocked = true;
-						}
-					}
-					if (iceField[h]->getY() == a->getY() + 3 && iceField[h]->isVisible()) {
-						if (iceField[h]->getX() == i) { // x, y coords match i = line of x coords
-							blocked = true;
+							return GraphObject::Direction::none;
 						}
 					}
 				}
