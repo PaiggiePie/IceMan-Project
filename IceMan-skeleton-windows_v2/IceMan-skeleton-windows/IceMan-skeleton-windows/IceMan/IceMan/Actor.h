@@ -37,8 +37,8 @@ public:
     //// Can other actors pass through this actor?
     //virtual bool canActorsPassThroughMe() const;
 
-    //// Can this actor pick items up?
-    //virtual bool canPickThingsUp() const;
+    // Can this actor pick items up?
+    virtual bool canPickThingsUp() const { return false; }
 
     //// Does this actor hunt the IceMan?
     //virtual bool huntsIceMan() const;
@@ -71,7 +71,7 @@ public:
     // How many hit points does this actor have left?
     unsigned int getHitPoints() const;
     virtual bool leavingOilField() { return false; }
-    //virtual bool canPickThingsUp() const;
+    virtual bool canPickThingsUp() const { return true; }
 
 protected:
     unsigned int hitPoints;
@@ -136,6 +136,7 @@ public:
     virtual bool annoy(unsigned int amount);
     virtual void addGold();
     unsigned int getGold() const { return m_gold; } // getter for gold
+    bool canPickThingsUp() const { return true;  }
     //virtual bool huntsIceMan() const;
 
     // Set state to having gien up protest
@@ -153,7 +154,7 @@ protected:
     bool resting = false; // starts off not resting
     int restingTicks = 0;
     int perpenTicks = 80; // number of ticks since last perpendicular turn
-    int numSquaresToMoveInCurrentDirection = 35;
+    int numSquaresToMoveInCurrentDirection = 60;
     unsigned int m_gold = 0;
 };
 
@@ -162,7 +163,6 @@ class RegularProtester : public Protester {
 public:
     RegularProtester(StudentWorld* sp);
     void doSomething() override;
-
 };
 
 class HardcoreProtester : public Protester {
@@ -190,9 +190,6 @@ class Squirt : public Actor
 public:
     Squirt(StudentWorld* sp, int x, int y, Direction dir, int m_distance);
     void doSomething() override;
-
-private:
-    int m_distance = 4;
 };
 
 
