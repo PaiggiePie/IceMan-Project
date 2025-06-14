@@ -64,7 +64,7 @@ public:
 
     //getter functions
     const int getCurrentHealth() {
-        return (int)((iceman->getHitPoints() / 10) * 100);
+        return (int)((iceman->getHitPoints() * 100) / 10);
     };
     const int getSquirtsLeftInSquirtGun() { return iceman->getWater(); };
     const int getPlayerGoldCount() { return iceman->getGold(); };
@@ -98,7 +98,6 @@ public:
         GameWorld::setGameStatText(s); // in GameWorld.cpp
     }
 
-
 private:
     Iceman* iceman = nullptr;
     std::vector<Agent*> agents; // Protesters & iceman
@@ -108,7 +107,7 @@ private:
     int barrels = 0;
     int currentLevelNumber = 0;
 
-    //std::unordered_map<int, int> coords;
+    std::unordered_map<int, int> coords;
 
 };
 
