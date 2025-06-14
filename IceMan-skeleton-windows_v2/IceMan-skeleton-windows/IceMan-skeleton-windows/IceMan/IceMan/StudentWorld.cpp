@@ -64,7 +64,6 @@ int StudentWorld::init() {
 					iceField.push_back(iceObj);
 				}
 			}
-
 		}
 	}
 
@@ -287,29 +286,30 @@ void StudentWorld::clearIce(int x, int y) {
 
 
 bool StudentWorld::canActorMoveTo(Actor* a, int x, int y) const {
-	if (x < 0 || x >= 60 || y < 0 || y >= 60) {
+	// applies to protesters
+	if (a->canPickThingsUp() && (x < 0 || x >= 61 || y < 0 || y > 60)) 
+		return false;
+	else if (x < 0 || x >= 61 || y < 0 || y > 64) { // squirts mainly
 		return false; // out of bounds
 	}
 	if (a->canPickThingsUp()) {
+		// if there is ice or boulder at x, y
+		/* (x, y+3)     (x+3, y+3)
+		*  
+		*  (x, y)       (x+3, y)
+		*/
+		if (atItem(x, y + 3, true) || atItem(x + 3, y + 3, true) ||
+			atItem(x, y, true) || atItem(x + 3, y, true)) {
+			return false;
+		}
+	}
+	else {
 		for (auto& iceObj : iceField) {
-			if (iceObj->isVisible() && ((iceObj->getX() == x) ||
-				(iceObj->getX() == x + 1) ||
-				(iceObj->getX() == x + 2) ||
-				(iceObj->getX() == x + 3)) &&
-				((iceObj->getY() == y) ||
-					(iceObj->getY() == y + 1) ||
-					(iceObj->getY() == y + 2) ||
-					(iceObj->getY() == y + 3))) {
+			if (iceObj->isVisible() && iceObj->getX() == x && iceObj->getY() == y) {
 				return false; // ice blocks and boulders
 			}
 		}
 	}
-	else
-		for (auto& iceObj : iceField) {
-			if (iceObj->isVisible() && (iceObj->getX() == x) && (iceObj->getY() == y)) {
-				return false; // ice blocks and boulders
-			}
-		}
 	return true;
 }
 
@@ -385,19 +385,16 @@ void StudentWorld::giveIceManWater() {
 
 // Is the Actor a facing toward the IceMan?
 bool StudentWorld::facingTowardIceMan(Actor* a) const {
-	if (a->getX() == iceman->getX()) { // same x level && right side of iceman
-		if (a->getDirection() == GraphObject::Direction::left && a->getX() > iceman->getX())
-			return true; // actor is facing left towards iceman
-		else if (a->getDirection() == GraphObject::Direction::right && a->getX() < iceman->getX()) {
-			return true; // actor is facing right away from iceman
-		}
+	if (a->getDirection() == GraphObject::Direction::left && a->getX() > iceman->getX())
+		return true; // actor is facing left towards iceman
+	else if (a->getDirection() == GraphObject::Direction::right && a->getX() < iceman->getX()) {
+		return true; // actor is facing right away from iceman
 	}
-	else if (a->getY() == iceman->getY()) { // same y level && above iceman
-		if (a->getDirection() == GraphObject::Direction::up && a->getY() < iceman->getY())
-			return true; // actor is facing up towards iceman
-		else if (a->getDirection() == GraphObject::Direction::down && a->getY() > iceman->getY()) {
-			return true; // actor is facing down away from iceman
-		}
+
+	if (a->getDirection() == GraphObject::Direction::up && a->getY() < iceman->getY())
+		return true; // actor is facing up towards iceman
+	else if (a->getDirection() == GraphObject::Direction::down && a->getY() > iceman->getY()) {
+		return true; // actor is facing down away from iceman
 	}
 	return false;
 }
@@ -409,100 +406,6 @@ GraphObject::Direction StudentWorld::lineOfSightToIceMan(Actor* a, bool facing) 
 	if (facingTowardIceMan(a) == false && facing == true) {
 		return GraphObject::Direction::none; // if actor is not facing towards iceman, return none
 	}
-
-	//if (a->getX() == iceman->getX() && a->getX() + 1 == iceman->getX() + 1 &&
-	//	a->getX() + 2 == iceman->getX() + 2 && a->getX() + 3 == iceman->getX() + 3) { // same x level
-	//	if (iceman->getY() > a->getY()) {// up
-	//		for (auto& ice : iceField)
-	//			if (ice->getY() < iceman->getY() || ice->getY() > a->getY() && ice->isVisible()) {
-	//				if (((ice->getX() == a->getX() || ice->getX() == a->getX() + 1 ||
-	//						ice->getX() == a->getX() + 2 || ice->getX() == a->getX() + 3)))
-	//					return GraphObject::Direction::none;
-	//			}
-	//	}
-	//	else {//if (iceman->getY() < a->getY()) // down
-	//		for (auto& ice : iceField)
-	//			if (ice->isVisible() && (ice->getY() < a->getY() || ice->getY() > iceman->getY()) &&
-	//				((ice->getX() == a->getX() || ice->getX() == a->getX() + 1 ||
-	//					ice->getX() == a->getX() + 2 || ice->getX() == a->getX() + 3)))
-	//				return GraphObject::Direction::none;
-	//	}
-	//}
-	//else if (a->getY() == iceman->getY() && a->getY() + 1 == iceman->getY() + 1 &&
-	//	a->getY() + 2 == iceman->getY() + 2 && a->getY() + 3 == iceman->getY() + 3) { // same y level
-	//	if (iceman->getX() > a->getX()) { // right
-	//		for (auto& ice : iceField)
-	//			if (ice->isVisible() && (ice->getX() > a->getX() || ice->getX() < iceman->getX()) &&
-	//				((ice->getY() == a->getY() || ice->getY() == a->getY() + 1 ||
-	//					ice->getY() == a->getY() + 2 || ice->getY() == a->getY() + 3)))
-	//				return GraphObject::Direction::none;
-	//	}
-	//	else if (iceman->getX() < a->getX()) { // left
-	//		for (auto& ice : iceField)
-	//			if (ice->isVisible() && (ice->getX() < a->getX() || ice->getX() > iceman->getX()) &&
-	//				((ice->getY() == a->getY() || ice->getY() == a->getY() + 1 ||
-	//					ice->getY() == a->getY() + 2 || ice->getY() == a->getY() + 3)))
-	//				return GraphObject::Direction::none;
-	//	}
-	//}
-	//if (a->getY() > iceman->getY()) {
-	//	return GraphObject::Direction::up;
-	//}
-	//else if (a->getY() < iceman->getY()) {
-	//	return GraphObject::Direction::down;
-	//}
-	//else if (iceman->getX() > a->getX()) {
-	//	return GraphObject::Direction::right;
-	//}
-	//else if (iceman->getX() < a->getX()) {
-	//	return GraphObject::Direction::left;
-
-	//}
-	//return GraphObject::Direction::none;
-
-	//if (facingTowardIceMan(a) == false && facing) {
-	//	return GraphObject::Direction::none; // if actor is not facing towards iceman, return none
-	//}
-	//if (a->getX() == iceman->getX()) {
-	//	for (auto& ice : coords) {
-	//		if (ice.first >= a->getX() && ice.first < a->getX() + 4) {
-	//			if ((a->getY() < iceman->getY() && ice.second > a->getY() && ice.second < iceman->getY()) ||
-	//				(a->getY() > iceman->getY() && ice.second > iceman->getY() && ice.second < a->getY())) {
-	//				continue;
-	//			}
-	//			else
-	//				return GraphObject::Direction::none;
-	//		}
-	//	}
-	//	if (blocked)
-	//		return GraphObject::Direction::none;
-
-	//	return (a->getY() < iceman->getY()) ? GraphObject::Direction::up : GraphObject::Direction::down;
-	//}
-	//// Horizontal line-of-sight (same Y)
-	//else if (a->getY() == iceman->getY()) {
-	//	for (auto& ice : coords) {
-
-	//		if (ice.second >= a->getY() && ice.second < a->getY() + 4) {
-	//			if ((a->getX() < iceman->getX() && ice.first > a->getX() && ice.first < iceman->getX()) ||
-	//				(a->getX() > iceman->getX() && ice.first > iceman->getX() && ice.first < a->getX())) {
-	//				continue;
-	//			}
-	//			else
-	//				return GraphObject::Direction::none;
-	//		}
-	//	}
-	//	if (blocked)
-	//		return GraphObject::Direction::none;
-
-	//	return (a->getX() < iceman->getX()) ? GraphObject::Direction::right : GraphObject::Direction::left;
-	//}
-
-	//return GraphObject::Direction::none;
-
-
-
-
 	int actorX = a->getX();
 	int actorY = a->getY();
 	int icemanX = iceman->getX();
@@ -582,20 +485,23 @@ bool StudentWorld::NearItem(int x, int y, int radius) const {
 // checks the iceField for boulder and if ice == true, for ice
 bool StudentWorld::atItem(int x, int y, bool ice) const { // if you need to check ice, ice == true, boulders = false
 
-	if (ice == true) 
+	if (ice == true) {
 		for (auto& iceObj : iceField) {
 			if (iceObj->isVisible() && (iceObj->getX() == x && iceObj->getY() == y)) {
 				return true;
 			}
 		}
-	else
-		for (auto& iceObj : iceField) { // only boulder
-			if (iceObj->isVisible() && iceObj != nullptr && iceObj->getID() == IID_BOULDER &&
-				(iceObj->getX() == x && iceObj->getY() == y)) {
-				return true;
-			}
+	}
+	for (auto& iceObj : iceField) { // only boulder
+		if (iceObj->isVisible() && iceObj != nullptr &&
+					iceObj->getID() == IID_BOULDER &&
+					((iceObj->getX() == x || iceObj->getX() + 1 == x 
+					|| iceObj->getX() + 2 == x || iceObj->getX() + 3 == x) && 
+					(iceObj->getY() == y || iceObj->getY() + 1 == y || 
+					iceObj->getY() + 2 == y || iceObj->getY() + 3 == y))) {
+			return true;
 		}
-
+	}
 	return false;
 }
 
