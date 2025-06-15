@@ -98,6 +98,7 @@ public:
         GameWorld::setGameStatText(s); // in GameWorld.cpp
     }
 
+
 private:
     Iceman* iceman = nullptr;
     std::vector<Agent*> agents; // Protesters & iceman

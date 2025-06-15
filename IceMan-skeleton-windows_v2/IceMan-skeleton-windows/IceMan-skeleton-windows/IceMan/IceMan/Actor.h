@@ -136,12 +136,12 @@ public:
     virtual bool annoy(unsigned int amount);
     virtual void addGold();
     unsigned int getGold() const { return m_gold; } // getter for gold
-    bool canPickThingsUp() const { return true;  }
+    bool canPickThingsUp() const { return true; }
     //virtual bool huntsIceMan() const;
 
     // Set state to having gien up protest
     void setMustLeaveOilField();
-	bool leavingOilField() const { return leave; } // getter for leave state
+    bool leavingOilField() const { return leave; } // getter for leave state
 
     // Set number of ticks until next move
     void setTicksToNextMove();
@@ -151,7 +151,6 @@ protected:
     bool leave = false; // starts off not leaving
     bool shouted = false;
     int shoutTicks = 0;
-    bool resting = false; // starts off not resting
     int restingTicks = 0;
     int perpenTicks = 80; // number of ticks since last perpendicular turn
     int numSquaresToMoveInCurrentDirection = 60;
@@ -182,7 +181,7 @@ public:
 
 private:
     bool fallingState = false; // starts off not falling
-    int restingTicks = -1; 
+    int restingTicks = -1;
 };
 
 class Squirt : public Actor
@@ -190,6 +189,9 @@ class Squirt : public Actor
 public:
     Squirt(StudentWorld* sp, int x, int y, Direction dir, int m_distance);
     void doSomething() override;
+
+private: 
+    int m_distance;
 };
 
 

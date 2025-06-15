@@ -287,7 +287,7 @@ void StudentWorld::clearIce(int x, int y) {
 
 bool StudentWorld::canActorMoveTo(Actor* a, int x, int y) const {
 	// applies to protesters
-	if (a->canPickThingsUp() && (x < 0 || x >= 61 || y < 0 || y > 60)) 
+	if (a->canPickThingsUp() && (x < 0 || x >= 61 || y < 0 || y > 60))
 		return false;
 	else if (x < 0 || x >= 61 || y < 0 || y > 64) { // squirts mainly
 		return false; // out of bounds
@@ -295,12 +295,21 @@ bool StudentWorld::canActorMoveTo(Actor* a, int x, int y) const {
 	if (a->canPickThingsUp()) {
 		// if there is ice or boulder at x, y
 		/* (x, y+3)     (x+3, y+3)
-		*  
+		*
 		*  (x, y)       (x+3, y)
 		*/
-		if (atItem(x, y + 3, true) || atItem(x + 3, y + 3, true) ||
-			atItem(x, y, true) || atItem(x + 3, y, true)) {
-			return false;
+		for (auto& iceObj : iceField) {
+			if ((iceObj->isVisible() && (iceObj->getX() == x) ||
+					(iceObj->getX() == x + 1) ||
+					(iceObj->getX() == x + 2) ||
+					(iceObj->getX() == x + 3)) &&
+					((iceObj->getY() == y) ||
+					(iceObj->getY() == y + 1) ||
+					(iceObj->getY() == y + 2) ||
+					(iceObj->getY() == y + 3))
+					) {
+				return false;
+			}
 		}
 	}
 	else {
@@ -459,8 +468,8 @@ bool StudentWorld::isNearIceMan(Actor* a, int radius) const {
 // if within radius of boulder
 bool StudentWorld::NearBoulder(int x, int y, int radius) const {
 	for (auto& ice : iceField) {
-		if (ice != nullptr && ice->getID() == IID_BOULDER) { // if there is a boulder in the iceField
-			if (radius > std::abs(x - ice->getX()) && radius > std::abs(y - ice->getY()))
+		if (ice != nullptr && ice->getID() == IID_BOULDER && ice->isVisible()) { // if there is a boulder in the iceField
+			if (radius > std::abs(x - ice->getX() + 1) && radius > std::abs(y - ice->getY() + 2))
 				return true; // if boulder is in radius, return true
 		}
 	}
@@ -475,7 +484,8 @@ bool StudentWorld::NearItem(int x, int y, int radius) const {
 
 	for (auto& aobj : aobj) {
 		if (aobj != nullptr) {
-			if (radius > std::abs(x - aobj->getX()) && radius > std::abs(y - aobj->getY()))
+			if (radius > std::abs(x - aobj->getX() + 1) && 
+					radius > std::abs(y - aobj->getY() + 2))
 				return true; // if boulder is in radius, return true
 		}
 	}
@@ -495,9 +505,9 @@ bool StudentWorld::atItem(int x, int y, bool ice) const { // if you need to chec
 	for (auto& iceObj : iceField) { // only boulder
 		if (iceObj->isVisible() && iceObj != nullptr &&
 					iceObj->getID() == IID_BOULDER &&
-					((iceObj->getX() == x || iceObj->getX() + 1 == x 
-					|| iceObj->getX() + 2 == x || iceObj->getX() + 3 == x) && 
-					(iceObj->getY() == y || iceObj->getY() + 1 == y || 
+					((iceObj->getX() == x || iceObj->getX() + 1 == x || 
+					iceObj->getX() + 2 == x || iceObj->getX() + 3 == x) &&
+					(iceObj->getY() == y || iceObj->getY() + 1 == y ||
 					iceObj->getY() + 2 == y || iceObj->getY() + 3 == y))) {
 			return true;
 		}
@@ -518,6 +528,9 @@ struct TreeNode {
 
 // returns direction of shortest path to exit
 GraphObject::Direction StudentWorld::determineFirstMoveToExit(int x, int y) {
+	if (y == 60)
+		return GraphObject::Direction::right;
+
 	const int goalX = 60;
 	const int goalY = 60;
 
