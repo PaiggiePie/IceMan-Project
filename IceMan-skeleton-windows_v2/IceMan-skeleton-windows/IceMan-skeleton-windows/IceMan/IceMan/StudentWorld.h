@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 #include <iomanip>
-#include <utility>
+#include <unordered_map>
 
 // Students:  Add code to this file, StudentWorld.cpp, Actor.h, and Actor.cpp
 
@@ -61,23 +61,17 @@ public:
     bool atItem(int x, int y, bool ice) const;
     GraphObject::Direction determineFirstMoveToExit(int x, int y);
     GraphObject::Direction determineFirstMoveToIceMan(int x, int y);
-
+    //void canExit();
     //getter functions
-    virtual const int getCurrentHealth() const{
-            return iceman->getHitPoints() *10;
-        };
-    virtual const int getSquirtsLeftInSquirtGun() { return iceman->getWater(); };
-    virtual const int getPlayerGoldCount() { return iceman->getGold(); };
-    virtual const int getBarrelsRemaining() {
-        int barrels = 0; // initialize barrels to 0
-        for (int i = 0; i < aobj.size(); i++) {
-            if (aobj[i]->getID() == IID_BARREL)
-                barrels++;
-        }
-        return barrels; // if no barrels, return 0
+    const int getCurrentHealth() {
+        return (int)((iceman->getHitPoints() * 100) / 10);
     };
-    virtual const int getPlayerSonarChargeCount() { return iceman->getSonar(); };
-    virtual const int getTicks() const { return ticks; };
+    const int getSquirtsLeftInSquirtGun() { return iceman->getWater(); };
+    const int getPlayerGoldCount() { return iceman->getGold(); };
+    const int getBarrelsRemaining() { return barrels; };
+    void decBarrels() { barrels--; };
+    const int getPlayerSonarChargeCount() { return iceman->getSonar(); };
+    const int getTicks() const { return ticks; };
 
     //setter functions
     virtual void setDisplayText() {
@@ -94,26 +88,28 @@ public:
         // Lvl: 52 Lives : 3 Hlth : 80 % Wtr : 20 Gld : 3 Oil Left : 2 Sonar : 1 Scr : 321000
         std::string s;
         s = "Lvl: " + (string)(level >= 10 ? "" : " ") + std::to_string(level) + "  Lives: "
-            + std::to_string(lives) + "  Hlth: "
-            + (health == 100 ? "" : " ") + to_string(health) + "%  Wtr: "
-            + (squirts >= 10 ? "" : " ") + std::to_string(squirts) + "  Gld: "
-            + (gold >= 10 ? "" : " ") + std::to_string(gold) + "  Oil Left: "
-            + (barrelsLeft >= 10 ? "" : " ") + std::to_string(barrelsLeft) + "  Sonar: "
-            + (sonar >= 10 ? "" : " ") + std::to_string(sonar) + "  Scr: "
-            + std::string(6 - std::to_string(score).length(), '0') + std::to_string(score);
-        GameWorld::setGameStatText(s); // in GameWorld.cpp
+                    + std::to_string(lives) + "  Hlth: "
+                    + (health == 100 ? "" : " ") + to_string(health) + "%  Wtr: "
+                    + (squirts >= 10 ? "" : " ") + std::to_string(squirts) + "  Gld: "
+                    + (gold >= 10 ? "" : " ") + std::to_string(gold) + "  Oil Left: "
+                    + (barrelsLeft >= 10 ? "" : " ") + std::to_string(barrelsLeft) + "  Sonar: "
+                    + (sonar >= 10 ? "" : " ") + std::to_string(sonar) + "  Scr: "
+                    + std::string(6 - std::to_string(score).length(), '0') + std::to_string(score);
+                GameWorld::setGameStatText(s); // in GameWorld.cpp
     }
-
 
 private:
     Iceman* iceman = nullptr;
     std::vector<Agent*> agents; // Protesters & iceman
     std::vector<ActivatingObject*> aobj; // for barrels, gold, sonar, waterpools
     std::vector<Actor*> iceField; // ice, boulders, squirts
-
     int ticks = 1; // global variable to keep track of ticks
-    int currentLevelNumber = 1;
-
+    int barrels = 0;
+    int currentLevelNumber = 0;
+    
+    //tracks all reachable coordinates from the exit
+    //int exitPath[64][64] = { };
+    std::unordered_map<int, int> coords;
 
 };
 
