@@ -30,18 +30,14 @@ public:
 
     // Annoy this actor.
     //virtual bool annoy(unsigned int amt);
-
-    //// Can this actor dig through Ice?
-    //virtual bool canDigThroughIce() const;
+    virtual bool canDigThroughIce() const;
 
     //// Can other actors pass through this actor?
     //virtual bool canActorsPassThroughMe() const;
 
     // Can this actor pick items up?
     virtual bool canPickThingsUp() const { return false; }
-
-    //// Does this actor hunt the IceMan?
-    //virtual bool huntsIceMan() const;
+    virtual bool huntsIceMan() const;
 
     //// Can this actor need to be picked up to finish the level?
     //virtual bool needsToBePickedUpToFinishLevel() const;
@@ -72,8 +68,11 @@ public:
     unsigned int getHitPoints() const;
     virtual bool leavingOilField() { return false; }
     virtual bool canPickThingsUp() const { return true; }
-
+    virtual bool canDigThroughIce() const;
+    void setMustLeaveOilField();
+    
 protected:
+    bool leave = false; // starts off not leaving
     unsigned int hitPoints;
     bool m_isAlive = true;
 };
@@ -102,9 +101,10 @@ public:
 
     // Get amount of sonar charges
     unsigned int getSonar() const;
-
+    bool canDigThroughIce() const;
     // Get amount of water
     unsigned int getWater() const;
+    virtual bool huntsIceMan() const;
     ~Iceman();
 private:
     unsigned int m_hits = 10;
@@ -140,15 +140,14 @@ public:
     //virtual bool huntsIceMan() const;
 
     // Set state to having gien up protest
-    void setMustLeaveOilField();
-    bool leavingOilField() const { return leave; } // getter for leave state
+    bool leavingOilField();// getter for leave state
 
+    void setDead();
     // Set number of ticks until next move
     void setTicksToNextMove();
     void setSquaresToMoveInCurrentDirection();
-
+    bool huntsIceMan() const;
 protected:
-    bool leave = false; // starts off not leaving
     bool shouted = false;
     int shoutTicks = 0;
     bool resting = false; // starts off not resting
@@ -163,6 +162,7 @@ class RegularProtester : public Protester {
 public:
     RegularProtester(StudentWorld* sp);
     void doSomething() override;
+
 };
 
 class HardcoreProtester : public Protester {
