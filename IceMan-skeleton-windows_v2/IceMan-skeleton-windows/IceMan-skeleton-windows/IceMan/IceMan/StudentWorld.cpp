@@ -24,6 +24,12 @@ StudentWorld::StudentWorld(std::string assetDir)
 
 }
 
+//functions to implement
+
+//void Actor::setWorld(StudentWorld*& sp) const {
+//    sp = sw;
+//}
+
 int StudentWorld::init() {
     // make iceman
     this->iceman = new Iceman(sw);
@@ -49,7 +55,6 @@ int StudentWorld::init() {
     for (int i = 0; i < 65; i++) {
         for (int j = 0; j < 60; j++) {
             if (i > 29 && i < 34 && j > 3) {
-                coords.emplace(i, j); // add tunnel coordinates to coords vector
                 continue;
             }
             else {
@@ -198,6 +203,8 @@ int StudentWorld::move() {
         index++;
     }
     index = 0;
+
+
     ticks++; // increment ticks for each move
     return GWSTATUS_CONTINUE_GAME;
 }
@@ -309,7 +316,7 @@ int StudentWorld::annoyAllNearbyActors(Actor* annoyer, int points, int radius) {
         else if (nearbyAnnoyed->isAlive()) {
             nearbyAnnoyed->annoy(points); // annoy the nearby protester
             increaseScore(500); // 500 points for annoying protesters
-            nearbyAnnoyed->setDead();
+            //nearbyAnnoyed->setDead();
             return 2; // return 2 for protester
         }
     }
@@ -496,6 +503,8 @@ struct TreeNode {
     }
 };
 
+
+
 // returns direction of shortest path to exit
 GraphObject::Direction StudentWorld::determineFirstMoveToExit(int x, int y) {
     if (y == 60)
@@ -568,7 +577,6 @@ GraphObject::Direction StudentWorld::determineFirstMoveToExit(int x, int y) {
 }
 
 
-
 // Determine the direction of the first move a protester
 // makes to approach the IceMan.
 GraphObject::Direction StudentWorld::determineFirstMoveToIceMan(int x, int y) {
@@ -637,3 +645,5 @@ GraphObject::Direction StudentWorld::determineFirstMoveToIceMan(int x, int y) {
     }
     return GraphObject::none;
 }
+
+
