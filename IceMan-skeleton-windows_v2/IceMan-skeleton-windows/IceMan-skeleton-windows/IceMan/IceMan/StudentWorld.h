@@ -9,6 +9,9 @@
 #include <iomanip>
 #include <unordered_map>
 
+// Students:  Add code to this file, StudentWorld.cpp, Actor.h, and Actor.cpp
+
+
 class StudentWorld : public GameWorld
 {
 public:
@@ -46,7 +49,8 @@ public:
     int annoyAllNearbyActors(Actor* annoyer, int points, int radius);
     void revealAllNearbyObjects(int x, int y, int radius);
     Iceman* findNearbyIceMan(Actor* a, int radius) const;
-    Agent* findNearbyPickerUpper(Actor* a, int radius) const;   
+    Agent* findNearbyPickerUpper(Actor* a, int radius) const;
+    //void annoyIceMan();
     void giveIceManSonar();
     void giveIceManWater();
     bool facingTowardIceMan(Actor* a) const;
@@ -57,6 +61,8 @@ public:
     bool atItem(int x, int y, bool ice) const;
     GraphObject::Direction determineFirstMoveToExit(int x, int y);
     GraphObject::Direction determineFirstMoveToIceMan(int x, int y);
+    //void canExit();
+    //getter functions
     const int getCurrentHealth() {
         return (int)((iceman->getHitPoints() * 100) / 10);
     };
@@ -101,8 +107,6 @@ private:
     int barrels = 0;
     int currentLevelNumber = 0;
     int lastProtesterAddedTick = -1; //for protesters to track tick it gets added
-    std::unordered_map<int, int> coords;
-
 };
 
 
