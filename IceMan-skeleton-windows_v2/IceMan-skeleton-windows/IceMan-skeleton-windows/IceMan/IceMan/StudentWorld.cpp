@@ -24,12 +24,6 @@ StudentWorld::StudentWorld(std::string assetDir)
 
 }
 
-//functions to implement
-
-//void Actor::setWorld(StudentWorld*& sp) const {
-//    sp = sw;
-//}
-
 int StudentWorld::init() {
     // make iceman
     this->iceman = new Iceman(sw);
@@ -113,9 +107,10 @@ int StudentWorld::move() {
     if (ticks % T == 0) {
         canAddP = true;
     }
-    if (canAddP == true) {
-        if (P > agents.size() - 1) { // if number of protesters is less than max (-1 for iceman)
-            if (probabilityOfHardcore == (rand() % probabilityOfHardcore + 1)) { // if hardcore protester
+    
+    if (ticks - lastProtesterAddedTick >= T) {
+        if ((int)agents.size() - 1 < P) { // if number of protesters is less than max (-1 for iceman)
+            if (rand() % 100 < probabilityOfHardcore) { // if hardcore protester
                 HardcoreProtester* hp = new HardcoreProtester(sw);
                 agents.push_back(hp); // add hardcore protester to agents vector
             }
@@ -123,13 +118,12 @@ int StudentWorld::move() {
                 RegularProtester* rp = new RegularProtester(sw);
                 agents.push_back(rp); // add protester to agents vector
             }
-
         }
+        lastProtesterAddedTick = ticks; //update last added tracking ticks
     }
 
     // randomly add water pool or sonar kit
     int G = currentLevelNumber * 30 + 290; // 1 in G chance of water kit or sonar kit added
-
     //int random = (rand() % G + 1);
     if (rand() % G == 0) {
         int random2 = rand() % 6; // 0–5
@@ -204,15 +198,6 @@ int StudentWorld::move() {
         index++;
     }
     index = 0;
-    /*for (auto& ice : iceField) {
-        if (ice->isAlive() == false) {
-            delete ice;
-            iceField.erase((iceField.begin() + index));
-            index--;
-        }
-        index++;
-    }*/
-
     ticks++; // increment ticks for each move
     return GWSTATUS_CONTINUE_GAME;
 }
@@ -272,9 +257,9 @@ bool StudentWorld::canActorMoveTo(Actor* a, int x, int y) const {
     // applies to protesters
     if (a != nullptr && a->canPickThingsUp() && (x < 0 || x >= 61 || y < 0 || y > 60))
         return false;
-//    else if (x < 0 || x >= 61 || y < 0 || y > 64) { // squirts mainly
-  //      return false; // out of bounds
-    //}
+    else if (x < 0 || x >= 61 || y < 0 || y > 64) { // squirts mainly
+        return false; // out of bounds
+    }
     //ignores actor validity and just checks for a clear path
     if (a == nullptr){
         for (int dx = 0; dx < 4; dx++) {
@@ -286,7 +271,6 @@ bool StudentWorld::canActorMoveTo(Actor* a, int x, int y) const {
                         if (iceObj->isVisible() && iceObj->getX() == checkX && iceObj->getY() == checkY)
                             return false;
                     }
-                    // Optional: check boulders if needed here
                 }
             }
             return true;
@@ -371,10 +355,6 @@ Agent* StudentWorld::findNearbyPickerUpper(Actor* a, int radius) const {
     return nullptr; // if no actors in radius, return null
 }
 
-// Annoy the IceMan.
-/*void StudentWorld::annoyIceMan() {
-    iceman->annoy(1); // by how much?
-}*/
 
 void StudentWorld::giveIceManSonar() {
     iceman->addSonar(); // give iceman sonar
@@ -515,56 +495,6 @@ struct TreeNode {
         : x(x), y(y), fromParent(dir), parent(parent) {
     }
 };
-
-/*void StudentWorld::canExit(){
-    queue<pair<int, int>> q;
-    //intialize all coordinates to 0 to signify unvisited    
-    const int goalX = 60;
-    const int goalY = 60;
-    
-    q.push({goalX,goalY});
-    //mark exit as reachable
-    exitPath[goalX][goalY]=1;
-    const vector<pair<int, int>> directions = {{0,1}, {0,-1}, {-1,0}, {1,0}};
-    
-    while (!q.empty()) {
-        auto [x, y] = q.front();
-        q.pop();
-        
-        for (auto& [dx, dy] : directions) {
-            int nx = x + dx;
-            int ny = y + dy;
-            
-            //check for bounds
-            if (nx < 0 || nx >= 64 || ny < 0 || ny >= 64)
-                continue;
-            
-            if (exitPath[nx][ny] != 0)// visited,
-                continue;
-            
-            if (canActorMoveTo(nullptr, nx, ny)) {
-                exitPath[nx][ny] = 1;
-                q.push({nx, ny});
-            } else {
-                exitPath[nx][ny] = -1; // blocked tile
-            }
-        }
-    }
-    for (int y = 63; y >= 0; y--) {
-        for (int x = 0; x < 64; x++) {
-            if (exitPath[x][y] == 1)
-                std::cout << '.';
-            else if (exitPath[x][y] == -1)
-                std::cout << '#';
-            else
-                std::cout << ' ';
-        }
-        std::cout << "\n";
-    }
-    cout << endl << endl;;
-}
-*/
-
 
 // returns direction of shortest path to exit
 GraphObject::Direction StudentWorld::determineFirstMoveToExit(int x, int y) {
@@ -707,16 +637,3 @@ GraphObject::Direction StudentWorld::determineFirstMoveToIceMan(int x, int y) {
     }
     return GraphObject::none;
 }
-
-
-
-// useable functions
-//unsigned int getLives() const;
-//void decLives();
-//void incLives();
-//unsigned int getScore() const;
-//unsigned int getLevel() const;
-//void increaseScore(unsigned int howMuch);
-//void setGameStatText(string text);
-//bool getKey(int& value);
-//void playSound(int soundID);
