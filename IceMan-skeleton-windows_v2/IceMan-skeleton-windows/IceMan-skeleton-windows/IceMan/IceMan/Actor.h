@@ -19,6 +19,10 @@ public:
 
     //returns true if actor is alive
     bool isAlive() const;
+
+    // getWorld function to return the StudentWorld pointer
+    //void setWorld(StudentWorld*& sp) const;
+    // Get this actor's world
     StudentWorld* getWorld() const { return sp; };
 
     // Mark this actor as dead.
@@ -28,10 +32,15 @@ public:
     //virtual bool annoy(unsigned int amt);
     virtual bool canDigThroughIce() const;
 
+    //// Can other actors pass through this actor?
+    //virtual bool canActorsPassThroughMe() const;
 
     // Can this actor pick items up?
     virtual bool canPickThingsUp() const { return false; }
     virtual bool huntsIceMan() const;
+
+    //// Can this actor need to be picked up to finish the level?
+    //virtual bool needsToBePickedUpToFinishLevel() const;
 
     // Move this actor to x,y if possible, and return true; otherwise,
     // return false without moving.
@@ -193,18 +202,25 @@ class ActivatingObject : public Actor
 public:
     ActivatingObject(StudentWorld* sp, int x, int y, int ID);
     ~ActivatingObject();
-
+    //bool needsToBePickedUpToFinishLevel() const;
+    // Set number of ticks until this object dies
+    //bool canActorsPassThroughMe() const;
     virtual void setTicksToLive();
     virtual void doSomething() = 0;
     // Getters for member variables
-
+    /*bool activateOnPlayer() const { return m_activateOnPlayer; }
+    bool activateOnProtester() const { return m_activateOnProtester; }
+    bool isInitiallyActive() const { return m_initiallyActive; }*/
 
 protected:
     int lifetime = -1;
     int trackTick = -1;
 private:
     int ticksToLive = 0; // number of ticks until this object dies
-   
+    //int m_soundToPlay = SOUND_NONE; // sound to play when this object is activated
+    //bool m_activateOnPlayer; // true if this object activates on player, false otherwise
+    //bool m_activateOnProtester; // true if this object activates on protester, false otherwise
+    //bool m_initiallyActive; // true if this object is initially active, false otherwise
 };
 
 class BarrelsOfOil : public ActivatingObject {
