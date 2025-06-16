@@ -74,14 +74,17 @@ Agent::Agent(StudentWorld* sp, int ID, int x, int y, Direction dir,
 }
 
 bool Agent::annoy(unsigned int amount) {
-    hitPoints = hitPoints - amount;
-    if (hitPoints == 0) {
+    if (!isAlive()) return false;  // Already dead
+    
+    hitPoints -= amount;
+    
+    if (hitPoints <= 0) {
+        hitPoints = 0;
         setDead();
-        return false;
+        return false;  // Died as a result of this call
     }
-    return true;
+    return true; // Still alive after being annoyed}
 }
-
 bool Agent::canDigThroughIce() const {
    return false;
 }
@@ -128,7 +131,7 @@ void Iceman::doSomething() {
             if (d != right) {
                 setDirection(right);
             }
-            else if (getX() < 61 &&(!sp->atItem(getX() + 3, getY() + 3, false) ||
+            else if (getX() < 61 && (!sp->atItem(getX() + 3, getY() + 3, false) &&
                     !sp->atItem(getX() + 3, getY(), false))) {
                 moveTo(getX() + 1, getY());
                 sp->clearIce(getX(), getY());
@@ -138,7 +141,7 @@ void Iceman::doSomething() {
             if (d != up) {
                 setDirection(up);
             }
-            else if (getY() < 60 && (!sp->atItem(getX(), getY() + 3, false) ||
+            else if (getY() < 60 && (!sp->atItem(getX(), getY() + 3, false) &&
                 !sp->atItem(getX() + 3, getY() + 3, false))) {
                 moveTo(getX(), getY() + 1);
                 sp->clearIce(getX(), getY());
@@ -148,7 +151,7 @@ void Iceman::doSomething() {
             if (d != down) {
                 setDirection(down);
             }
-            else if (getY() > 0 && (!sp->atItem(getX(), getY() - 1, false) ||
+            else if (getY() > 0 && (!sp->atItem(getX(), getY() - 1, false) &&
                 !sp->atItem(getX() + 3, getY() - 1, false))) {
                 moveTo(getX(), getY() - 1);
                 sp->clearIce(getX(), getY());
@@ -293,7 +296,7 @@ void Protester::setDead(){
 
 // Set number of ticks until next move
 void Protester::setTicksToNextMove() {
-    restingTicks = std::max(0, (int)(3 - sp->getLevel() / 4));
+    restingTicks = std::max(0, (int)(3 - sp->getLevel() / 4)-2);
 }
 
 void Protester::setSquaresToMoveInCurrentDirection() {
@@ -455,6 +458,7 @@ void RegularProtester::doSomething() {
             setSquaresToMoveInCurrentDirection();
             perpenTicks = 0;
         }
+        setTicksToNextMove();
     }
     
     // Try to move in current direction
@@ -526,7 +530,7 @@ void HardcoreProtester::doSomething() {
             sp->playSound(SOUND_PROTESTER_YELL);
             sp->getIceman()->annoy(2);
             shoutTicks = 15;
-            restingTicks = 0;
+            setTicksToNextMove();
         }
         return; //return immediately
     }
@@ -581,7 +585,7 @@ void HardcoreProtester::doSomething() {
             perpenTicks = 0; // reset perpendicular turn ticks
         }
         numSquaresToMoveInCurrentDirection = 60;
-        restingTicks = 0;
+        setTicksToNextMove();
         return;
     }
 
@@ -593,7 +597,7 @@ void HardcoreProtester::doSomething() {
         int pickDirection = rand() % 5;
         switch (pickDirection) {
             case 1:
-                setDirection(right);
+                //setDirection(right);
                 if (sp->canActorMoveTo(this, getX() - 1, getY()) && !(getDirection() == left)) {
                     setDirection(left);
                     moveTo(getX() - 1, getY());
@@ -653,7 +657,7 @@ void HardcoreProtester::doSomething() {
             setTicksToNextMove();
         }
         if (turned) {
-            setSquaresToMoveInCurrentDirection();
+            restingTicks = 0;
             perpenTicks = 0;
         }
     }
@@ -669,7 +673,7 @@ void HardcoreProtester::doSomething() {
         default: break;
     }
 
-    if (moved == true) {
+    if (moved) {
         //cout << "wandering" << endl;
         numSquaresToMoveInCurrentDirection--;
         setTicksToNextMove();
@@ -712,9 +716,6 @@ Boulder::Boulder(StudentWorld* sp, int x, int y) : Actor(sp, IID_BOULDER, x, y, 
     //cout << "boulder ctor" << endl;
 
 }
-//bool Boulder::canActorsPassThroughMe() const {
-//    return false;
-//}
 
 void Boulder::doSomething() {
     // if there is not ice below the boulder in 2x2 square, it can fall ie.
@@ -728,7 +729,7 @@ void Boulder::doSomething() {
         sp->canActorMoveTo(this, getX() + 3, getY() - 1)) {
         // if boulder can fall, then it will fall after 30 ticks
         if (restingTicks == -1)
-            restingTicks = sp->getTicks() + 30;
+            restingTicks = sp->getTicks() + 15;
         else if (sp->getTicks() == restingTicks) {
             fallingState = true;
             sp->playSound(SOUND_FALLING_ROCK);
@@ -792,16 +793,19 @@ void Squirt::doSomething() {
     m_distance--;
     
     // if is a nearby protester gets hit, annoy them
-    Agent* nearby =sp->findNearbyPickerUpper(this, 3);
+    Agent* nearby = sp->findNearbyPickerUpper(this, 3);
     if (nearby != nullptr && !nearby->leavingOilField()) {
-        // if not in leaving state, annoy
-        nearby->annoy(2); // annoy protester by 2
-        sp->increaseScore(100);
-        if (nearby->getID() == IID_HARD_CORE_PROTESTER)
-            sp->increaseScore(250); // 250 points for hardcore protester
-        sp->increaseScore(150);
+        bool wasLeaving = nearby->leavingOilField(); // should be false here
+        nearby->annoy(2);
+        bool nowLeaving = nearby->leavingOilField();
+        
+        if (!wasLeaving && nowLeaving) {
+            if (nearby->getID() == IID_HARD_CORE_PROTESTER)
+                sp->increaseScore(250);
+            else
+                sp->increaseScore(100);
+        }
         setDead();// set squirt to dead
-        return;
     }
 }
 
@@ -815,14 +819,6 @@ ActivatingObject::ActivatingObject(StudentWorld* sp, int x, int y, int ID) :
     //cout << "ActivatingObject ctor" << endl;
 }
 
-//will only be used by barrels of oil. all other objects use Actor::needsToBePickedUpToFinishLevel()
-//bool ActivatingObject::needsToBePickedUpToFinishLevel() const {
-//    return false;
-//}
-//
-//bool ActivatingObject::canActorsPassThroughMe() const {
-//    return true;
-//}
 void ActivatingObject::setTicksToLive() {
     int math = 300 - (10 * sp->getLevel());
     ticksToLive = max(100, math);
@@ -859,9 +855,6 @@ void BarrelsOfOil::doSomething() {
     }
 }
 
-//bool BarrelsOfOil::needsToBePickedUpToFinishLevel() const {
-//    return true;
-//}
 
 BarrelsOfOil::~BarrelsOfOil() {
     setVisible(false);
